@@ -19,6 +19,9 @@ export const AppProviders = ({ children }: { children: React.ReactNode }) => {
             fontStack: "system",
             overlayBlur: "small",
           })}
+          modalSize="compact"
+          showRecentTransactions={true}
+          coolMode
         >
           {children}
         </RainbowKitProvider>
