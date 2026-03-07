@@ -20,7 +20,7 @@ export const Navbar = () => {
           <span className="text-white font-bold text-xl">D</span>
         </div>
         <div>
-          <h1 className="text-xl font-bold text-white">DeFi Mastery</h1>
+          <h1 className="text-xl font-bold text-white">Staking DApp</h1>
           <p className="text-xs text-gray-400">AMM • LP • Farming</p>
         </div>
       </div>
