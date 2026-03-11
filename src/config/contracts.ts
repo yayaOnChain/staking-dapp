@@ -1,10 +1,10 @@
 export const CONTRACT_ADDRESSES = {
   sepolia: {
-    AMM: "0x123...",
-    LP_TOKEN: "0x456...",
-    FARM: "0x789...",
-    TOKEN_A: "0xAAA...",
-    TOKEN_B: "0xBBB...",
+    POOL: import.meta.env.VITE_POOL_ADDRESS, // LiquidityPool contract (for swap + liquidity)
+    FARM: import.meta.env.VITE_FARM_ADDRESS,
+    TOKEN_A: import.meta.env.VITE_TOKEN_A_ADDRESS,
+    TOKEN_B: import.meta.env.VITE_TOKEN_B_ADDRESS,
+    REWARD_TOKEN: import.meta.env.VITE_REWARD_TOKEN_ADDRESS,
   },
   mainnet: {
     // Add mainnet addresses here
