@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   useAccount,
   useReadContract,
@@ -9,8 +9,8 @@ import { parseEther, formatEther, maxUint256, type Address } from "viem";
 import { toast } from "sonner";
 import { TransactionMonitor } from "../web3/TransactionToast";
 
-// AMM Contract ABI
-const AMM_ABI = [
+// LiquidityPool Contract ABI (supports swap + liquidity)
+const POOL_ABI = [
   {
     inputs: [
       { internalType: "uint256", name: "amountIn", type: "uint256" },
@@ -31,6 +31,23 @@ const AMM_ABI = [
   {
     inputs: [],
     name: "reserve1",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "amount0", type: "uint256" },
+      { internalType: "uint256", name: "amount1", type: "uint256" },
+    ],
+    name: "addLiquidity",
+    outputs: [{ internalType: "uint256", name: "lpTokens", type: "uint256" }],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalSupply",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
@@ -68,7 +85,7 @@ const ERC20_ABI = [
 ] as const;
 
 interface SwapInterfaceProps {
-  ammAddress: Address;
+  poolAddress: Address;
   token0Address: Address;
   token1Address: Address;
 }
@@ -77,7 +94,7 @@ interface SwapInterfaceProps {
  * Complete Swap Interface with approval flow and real-time price calculation
  */
 export const SwapInterface = ({
-  ammAddress,
+  poolAddress,
   token0Address,
   token1Address,
 }: SwapInterfaceProps) => {
@@ -85,6 +102,9 @@ export const SwapInterface = ({
   const [amountIn, setAmountIn] = useState("");
   const [tokenIn, setTokenIn] = useState<"token0" | "token1">("token0");
   const [hash, setHash] = useState<Address | undefined>();
+  
+  // Track toast IDs to prevent duplicates
+  const toastIdRef = useRef<string | number | null>(null);
 
   // Contract interactions
   const { writeContract, writeContractAsync, isPending } = useWriteContract();
@@ -93,14 +113,14 @@ export const SwapInterface = ({
 
   // Read pool reserves for price calculation
   const { data: reserve0 } = useReadContract({
-    address: ammAddress,
-    abi: AMM_ABI,
+    address: poolAddress,
+    abi: POOL_ABI,
     functionName: "reserve0",
   });
 
   const { data: reserve1 } = useReadContract({
-    address: ammAddress,
-    abi: AMM_ABI,
+    address: poolAddress,
+    abi: POOL_ABI,
     functionName: "reserve1",
   });
 
@@ -119,24 +139,34 @@ export const SwapInterface = ({
     address: currentTokenAddress,
     abi: ERC20_ABI,
     functionName: "allowance",
-    args: [address as Address, ammAddress],
+    args: [address as Address, poolAddress],
   });
 
   // Calculate estimated output based on constant product formula
   const calculateOutput = () => {
-    if (!amountIn || !reserve0 || !reserve1) return "0";
+    if (!amountIn || !reserve0 || !reserve1) {
+      return "0";
+    }
 
     const amountInWei = parseEther(amountIn);
     const isToken0In = tokenIn === "token0";
     const reserveIn = isToken0In ? reserve0 : reserve1;
     const reserveOut = isToken0In ? reserve1 : reserve0;
 
+    console.log("Swap calculation:", {
+      amountInWei: amountInWei.toString(),
+      reserveIn: reserveIn.toString(),
+      reserveOut: reserveOut.toString(),
+      isToken0In,
+    });
+
     // x * y = k formula with 0.3% fee
     const amountInWithFee = amountInWei * 997n;
     const numerator = amountInWithFee * reserveOut;
     const denominator = reserveIn * 1000n + amountInWithFee;
 
-    return formatEther(numerator / denominator);
+    const result = formatEther(numerator / denominator);
+    return result;
   };
 
   const estimatedOutput = calculateOutput();
@@ -146,15 +176,21 @@ export const SwapInterface = ({
   // Handle approval transaction
   const handleApprove = () => {
     try {
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
+      toastIdRef.current = toast.loading("Approving token...");
       writeContract({
         address: currentTokenAddress,
         abi: ERC20_ABI,
         functionName: "approve",
-        args: [ammAddress, maxUint256], // Infinite approval
+        args: [poolAddress, maxUint256], // Infinite approval
       });
-      toast.loading("Approving token...");
     } catch (error) {
       console.error(error);
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
       toast.error("Approval failed");
     }
   };
@@ -164,22 +200,52 @@ export const SwapInterface = ({
     if (!amountIn) return;
 
     try {
+      // Check if pool has liquidity before swapping
+      if (!reserve0 || !reserve1 || reserve0 === 0n || reserve1 === 0n) {
+        toast.error("Pool has no liquidity! Add liquidity first.");
+        return;
+      }
+
+      console.log("Swap params:", {
+        poolAddress,
+        amountIn: parseEther(amountIn).toString(),
+        tokenIn: currentTokenAddress,
+        reserve0: reserve0?.toString(),
+        reserve1: reserve1?.toString(),
+      });
+
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
+      toastIdRef.current = toast.loading("Swapping tokens...");
       const txHash = await writeContractAsync({
-        address: ammAddress,
-        abi: AMM_ABI,
+        address: poolAddress,
+        abi: POOL_ABI,
         functionName: "swap",
         args: [parseEther(amountIn), currentTokenAddress],
       });
       setHash(txHash as Address);
-      toast.loading("Swapping tokens...");
     } catch (error) {
-      console.error(error);
-      toast.error("Swap failed");
+      console.error("Swap error:", error);
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
+      // Handle gas limit error specifically
+      if (error instanceof Error && error.message.includes("gas limit")) {
+        toast.error("Gas limit too high. Pool may have no liquidity.");
+      } else if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Swap failed");
+      }
     }
   };
 
   // Handle success callback
   const handleSuccess = () => {
+    if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current); // Clear any pending toasts
+    
     toast.success("Swap completed successfully!");
     setAmountIn("");
     setHash(undefined);

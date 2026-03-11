@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   useAccount,
   useReadContract,
@@ -92,7 +92,7 @@ const ERC20_ABI = [
 ] as const;
 
 interface LiquidityProviderProps {
-  lpAddress: Address;
+  poolAddress: Address;
   token0Address: Address;
   token1Address: Address;
 }
@@ -101,7 +101,7 @@ interface LiquidityProviderProps {
  * Complete Liquidity Provider Interface with deposit/withdraw functionality
  */
 export const LiquidityProvider = ({
-  lpAddress,
+  poolAddress,
   token0Address,
   token1Address,
 }: LiquidityProviderProps) => {
@@ -111,6 +111,9 @@ export const LiquidityProvider = ({
   const [hash, setHash] = useState<Address | undefined>();
   const [mode, setMode] = useState<"add" | "remove">("add");
   const [isApproved, setIsApproved] = useState(false);
+  
+  // Track toast IDs to prevent duplicates
+  const toastIdRef = useRef<string | number | null>(null);
 
   const { writeContract, writeContractAsync, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -118,19 +121,19 @@ export const LiquidityProvider = ({
 
   // Pool statistics
   const { data: totalSupply } = useReadContract({
-    address: lpAddress,
+    address: poolAddress,
     abi: LP_ABI,
     functionName: "totalSupply",
   });
 
   const { data: reserve0 } = useReadContract({
-    address: lpAddress,
+    address: poolAddress,
     abi: LP_ABI,
     functionName: "reserve0",
   });
 
   const { data: reserve1 } = useReadContract({
-    address: lpAddress,
+    address: poolAddress,
     abi: LP_ABI,
     functionName: "reserve1",
   });
@@ -154,14 +157,14 @@ export const LiquidityProvider = ({
     address: token0Address,
     abi: ERC20_ABI,
     functionName: "allowance",
-    args: [address as Address, lpAddress],
+    args: [address as Address, poolAddress],
   });
 
   const { data: token1Allowance } = useReadContract({
     address: token1Address,
     abi: ERC20_ABI,
     functionName: "allowance",
-    args: [address as Address, lpAddress],
+    args: [address as Address, poolAddress],
   });
 
   useEffect(() => {
@@ -195,21 +198,27 @@ export const LiquidityProvider = ({
   // Handle approval for both tokens
   const handleApprove = () => {
     try {
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
+      toastIdRef.current = toast.loading("Approving tokens...");
       writeContract({
         address: token0Address,
         abi: ERC20_ABI,
         functionName: "approve",
-        args: [lpAddress, maxUint256],
+        args: [poolAddress, maxUint256],
       });
       writeContract({
         address: token1Address,
         abi: ERC20_ABI,
         functionName: "approve",
-        args: [lpAddress, maxUint256],
+        args: [poolAddress, maxUint256],
       });
-      toast.loading("Approving tokens...");
     } catch (error) {
       console.error(error);
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
       toast.error("Approval failed");
     }
   };
@@ -217,16 +226,23 @@ export const LiquidityProvider = ({
   // Handle add liquidity
   const handleAddLiquidity = async () => {
     try {
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
+      toastIdRef.current = toast.loading("Adding liquidity...");
       const txHash = await writeContractAsync({
-        address: lpAddress,
+        address: poolAddress,
         abi: LP_ABI,
         functionName: "addLiquidity",
         args: [parseEther(amount0), parseEther(amount1)],
+        gas: 800000n, // ~800k gas for add liquidity (2 token transfers)
       });
       setHash(txHash as Address);
-      toast.loading("Adding liquidity...");
     } catch (error) {
       console.error(error);
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
       toast.error("Failed to add liquidity");
     }
   };
@@ -234,21 +250,31 @@ export const LiquidityProvider = ({
   // Handle remove liquidity
   const handleRemoveLiquidity = async () => {
     try {
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+      
+      toastIdRef.current = toast.loading("Removing liquidity...");
       const txHash = await writeContractAsync({
-        address: lpAddress,
+        address: poolAddress,
         abi: LP_ABI,
         functionName: "removeLiquidity",
         args: [parseEther(amount0)], // Using amount0 as LP token amount in remove mode
+        gas: 800000n, // ~800k gas for remove liquidity
       });
       setHash(txHash as Address);
-      toast.loading("Removing liquidity...");
     } catch (error) {
       console.error(error);
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
       toast.error("Failed to remove liquidity");
     }
   };
 
   const handleSuccess = () => {
+    if (toastIdRef.current)
+      toast.dismiss(toastIdRef.current); // Clear any pending toasts
+
     toast.success(mode === "add" ? "Liquidity added!" : "Liquidity removed!");
     setAmount0("");
     setAmount1("");

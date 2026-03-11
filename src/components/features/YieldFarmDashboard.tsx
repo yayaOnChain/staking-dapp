@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   useAccount,
   useReadContract,
@@ -93,11 +93,13 @@ interface YieldFarmDashboardProps {
 export const YieldFarmDashboard = ({
   farmAddress,
   lpTokenAddress,
-  // rewardTokenAddress,
 }: YieldFarmDashboardProps) => {
   const { address } = useAccount();
   const [amount, setAmount] = useState("");
   const [hash, setHash] = useState<Address | undefined>();
+  
+  // Track toast IDs to prevent duplicates
+  const toastIdRef = useRef<string | number | null>(null);
 
   const { writeContract, writeContractAsync, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -134,7 +136,7 @@ export const YieldFarmDashboard = ({
     args: [address as Address],
   });
 
-  // User pending rewards
+  // User pending rewards - auto refresh
   const { data: pendingRewards } = useReadContract({
     address: farmAddress,
     abi: FARM_ABI,
@@ -143,21 +145,28 @@ export const YieldFarmDashboard = ({
   });
 
   const stakedAmount = formatEther(userInfo?.[0] || 0n);
+  
   const isApproved =
     allowance && lpBalance && allowance >= parseEther(amount || "0");
 
   // Handle approval
   const handleApprove = () => {
     try {
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
+      toastIdRef.current = toast.loading("Approving LP tokens...");
       writeContract({
         address: lpTokenAddress,
         abi: ERC20_ABI,
         functionName: "approve",
         args: [farmAddress, maxUint256],
       });
-      toast.loading("Approving LP tokens...");
     } catch (error) {
       console.error(error);
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
       toast.error("Approval failed");
     }
   };
@@ -165,16 +174,23 @@ export const YieldFarmDashboard = ({
   // Handle deposit
   const handleDeposit = async () => {
     try {
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
+      toastIdRef.current = toast.loading("Staking LP tokens...");
       const txHash = await writeContractAsync({
         address: farmAddress,
         abi: FARM_ABI,
         functionName: "deposit",
         args: [parseEther(amount)],
+        gas: 500000n, // ~500k gas for deposit
       });
       setHash(txHash as Address);
-      toast.loading("Staking LP tokens...");
     } catch (error) {
       console.error(error);
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
       toast.error("Deposit failed");
     }
   };
@@ -182,16 +198,23 @@ export const YieldFarmDashboard = ({
   // Handle withdraw
   const handleWithdraw = async () => {
     try {
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
+      toastIdRef.current = toast.loading("Unstaking LP tokens...");
       const txHash = await writeContractAsync({
         address: farmAddress,
         abi: FARM_ABI,
         functionName: "withdraw",
         args: [parseEther(amount)],
+        gas: 500000n, // ~500k gas for withdraw
       });
       setHash(txHash as Address);
-      toast.loading("Unstaking LP tokens...");
     } catch (error) {
       console.error(error);
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
       toast.error("Withdraw failed");
     }
   };
@@ -199,21 +222,31 @@ export const YieldFarmDashboard = ({
   // Handle harvest only
   const handleHarvest = async () => {
     try {
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
+      toastIdRef.current = toast.loading("Harvesting rewards...");
       const txHash = await writeContractAsync({
         address: farmAddress,
         abi: FARM_ABI,
         functionName: "withdraw",
         args: [0n], // Withdraw 0 = harvest only
+        gas: 300000n, // ~300k gas for harvest only
       });
       setHash(txHash as Address);
-      toast.loading("Harvesting rewards...");
     } catch (error) {
       console.error(error);
+      if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current);
+
       toast.error("Harvest failed");
     }
   };
 
   const handleSuccess = () => {
+    if (toastIdRef.current)
+        toast.dismiss(toastIdRef.current); // Clear any pending toasts
+    
     toast.success("Transaction confirmed!");
     setAmount("");
     setHash(undefined);
@@ -288,7 +321,7 @@ export const YieldFarmDashboard = ({
             <button
               onClick={handleApprove}
               disabled={isPending || isConfirming}
-              className="col-span-2 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition disabled:opacity-50"
+              className="col-span-2 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Approve LP Tokens
             </button>
@@ -297,14 +330,14 @@ export const YieldFarmDashboard = ({
               <button
                 onClick={handleDeposit}
                 disabled={isPending || isConfirming || !amount}
-                className="py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bold transition disabled:opacity-50"
+                className="py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Stake
               </button>
               <button
                 onClick={handleWithdraw}
                 disabled={isPending || isConfirming || !amount}
-                className="py-3 bg-red-600 hover:bg-red-700 rounded-lg font-bold transition disabled:opacity-50"
+                className="py-3 bg-red-600 hover:bg-red-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Unstake
               </button>
@@ -321,7 +354,7 @@ export const YieldFarmDashboard = ({
             !pendingRewards ||
             pendingRewards === 0n
           }
-          className="w-full py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-bold transition disabled:opacity-50"
+          className="w-full py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
           🎁 Harvest Rewards
         </button>
