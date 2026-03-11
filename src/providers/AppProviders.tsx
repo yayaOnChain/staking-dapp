@@ -4,7 +4,20 @@ import { config } from "../config/wagmi";
 import { darkTheme, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 
 // Create a query client for caching blockchain data
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Refetch data when window regains focus
+      refetchOnWindowFocus: true,
+      // Retry failed requests
+      retry: 1,
+      // Stale time: how long data is considered fresh
+      staleTime: 5000, // 5 seconds
+      // GC time: how long to keep unused data in cache
+      gcTime: 30000, // 30 seconds
+    },
+  },
+});
 
 // Wrap your app with these providers
 export const AppProviders = ({ children }: { children: React.ReactNode }) => {
