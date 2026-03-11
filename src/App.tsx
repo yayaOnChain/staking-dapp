@@ -6,24 +6,13 @@ import { SwapInterface } from "./components/features/SwapInterface";
 import { LiquidityProvider } from "./components/features/LiquidityProvider";
 import { YieldFarmDashboard } from "./components/features/YieldFarmDashboard";
 import { Toaster } from "sonner";
-
-// Contract addresses (Update with your deployed addresses)
-const CONTRACTS = {
-  sepolia: {
-    AMM: "0x1234567890123456789012345678901234567890" as `0x${string}`,
-    LP_TOKEN: "0x2345678901234567890123456789012345678901" as `0x${string}`,
-    FARM: "0x3456789012345678901234567890123456789012" as `0x${string}`,
-    TOKEN_A: "0x4567890123456789012345678901234567890123" as `0x${string}`,
-    TOKEN_B: "0x5678901234567890123456789012345678901234" as `0x${string}`,
-    REWARD_TOKEN: "0x6789012345678901234567890123456789012345" as `0x${string}`,
-  },
-};
+import { CONTRACT_ADDRESSES } from "./config/contracts";
 
 type Tab = "swap" | "pool" | "farm";
 
 const DashboardContent = () => {
   const [activeTab, setActiveTab] = useState<Tab>("swap");
-  const contracts = CONTRACTS.sepolia;
+  const contracts = CONTRACT_ADDRESSES.sepolia;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
@@ -54,14 +43,14 @@ const DashboardContent = () => {
       <main className="flex-1 max-w-6xl mx-auto p-4 w-full">
         {activeTab === "swap" && (
           <SwapInterface
-            ammAddress={contracts.AMM}
+            poolAddress={contracts.POOL}
             token0Address={contracts.TOKEN_A}
             token1Address={contracts.TOKEN_B}
           />
         )}
         {activeTab === "pool" && (
           <LiquidityProvider
-            lpAddress={contracts.LP_TOKEN}
+            poolAddress={contracts.POOL}
             token0Address={contracts.TOKEN_A}
             token1Address={contracts.TOKEN_B}
           />
@@ -69,7 +58,7 @@ const DashboardContent = () => {
         {activeTab === "farm" && (
           <YieldFarmDashboard
             farmAddress={contracts.FARM}
-            lpTokenAddress={contracts.LP_TOKEN}
+            lpTokenAddress={contracts.POOL}
             rewardTokenAddress={contracts.REWARD_TOKEN}
           />
         )}
