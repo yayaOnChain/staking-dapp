@@ -1,6 +1,7 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount, useSwitchChain } from "wagmi";
 import { sepolia } from "wagmi/chains";
+import { Button } from "../ui";
 
 /**
  * Navbar component with wallet connection and network switching
@@ -16,7 +17,7 @@ export const Navbar = () => {
     <nav className="flex justify-between items-center p-4 border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-50">
       {/* Logo & Brand */}
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+        <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
           <span className="text-white font-bold text-xl">D</span>
         </div>
         <div>
@@ -29,12 +30,13 @@ export const Navbar = () => {
       <div className="flex items-center gap-4">
         {/* Network Warning */}
         {isWrongNetwork && (
-          <button
+          <Button
+            variant="danger"
+            size="sm"
             onClick={() => switchChain({ chainId: sepolia.id })}
-            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition"
           >
             Switch to Sepolia
-          </button>
+          </Button>
         )}
 
         {/* Wallet Connect Button */}
