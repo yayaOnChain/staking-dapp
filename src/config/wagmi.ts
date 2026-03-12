@@ -1,11 +1,20 @@
 import { http, createConfig } from "wagmi";
 import { sepolia } from "wagmi/chains";
-// import { connectKit } from '@reown/appkit-adapter-wagmi'; // Example connector
+import { metaMask } from "wagmi/connectors";
 
-// Configure Wagmi with supported chains
+// Configure Wagmi with supported chains and connectors
 export const config = createConfig({
-  chains: [sepolia], // Add mainnet, polygon, etc. in production
+  chains: [sepolia],
   transports: {
-    [sepolia.id]: http(), // Uses public RPC or your own API key
+    [sepolia.id]: http(),
   },
+  connectors: [
+    // MetaMask connector with better UX
+    metaMask({
+      dappMetadata: {
+        name: "Staking DApp",
+        url: window.location.origin,
+      },
+    }),
+  ],
 });
