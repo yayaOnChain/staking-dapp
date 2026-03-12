@@ -1,88 +1,15 @@
-import { useState, useRef } from "react";
-import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-} from "wagmi";
-import { parseEther, formatEther, maxUint256, type Address } from "viem";
+import { useEffect } from "react";
+import { useAccount, useWaitForTransactionReceipt } from "wagmi";
+import { formatEther, type Address } from "viem";
 import { toast } from "sonner";
 import { TransactionMonitor } from "../web3/TransactionToast";
-
-// LiquidityPool Contract ABI (supports swap + liquidity)
-const POOL_ABI = [
-  {
-    inputs: [
-      { internalType: "uint256", name: "amountIn", type: "uint256" },
-      { internalType: "address", name: "tokenIn", type: "address" },
-    ],
-    name: "swap",
-    outputs: [{ internalType: "uint256", name: "amountOut", type: "uint256" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "reserve0",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "reserve1",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "uint256", name: "amount0", type: "uint256" },
-      { internalType: "uint256", name: "amount1", type: "uint256" },
-    ],
-    name: "addLiquidity",
-    outputs: [{ internalType: "uint256", name: "lpTokens", type: "uint256" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "totalSupply",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
-
-const ERC20_ABI = [
-  {
-    inputs: [
-      { internalType: "address", name: "spender", type: "address" },
-      { internalType: "uint256", name: "amount", type: "uint256" },
-    ],
-    name: "approve",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "address", name: "account", type: "address" }],
-    name: "balanceOf",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "address", name: "owner", type: "address" },
-      { internalType: "address", name: "spender", type: "address" },
-    ],
-    name: "allowance",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
+import { useSwap } from "../../hooks";
+import {
+  Card,
+  Button,
+  Input,
+  TokenSelectButton,
+} from "../../components/ui";
 
 interface SwapInterfaceProps {
   poolAddress: Address;
@@ -91,7 +18,8 @@ interface SwapInterfaceProps {
 }
 
 /**
- * Complete Swap Interface with approval flow and real-time price calculation
+ * Refactored Swap Interface with clean architecture
+ * Uses custom hooks for business logic and shared UI components
  */
 export const SwapInterface = ({
   poolAddress,
@@ -99,172 +27,81 @@ export const SwapInterface = ({
   token1Address,
 }: SwapInterfaceProps) => {
   const { address } = useAccount();
-  const [amountIn, setAmountIn] = useState("");
-  const [tokenIn, setTokenIn] = useState<"token0" | "token1">("token0");
-  const [hash, setHash] = useState<Address | undefined>();
-  
-  // Track toast IDs to prevent duplicates
-  const toastIdRef = useRef<string | number | null>(null);
 
-  // Contract interactions
-  const { writeContract, writeContractAsync, isPending } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({ hash });
-
-  // Read pool reserves for price calculation
-  const { data: reserve0 } = useReadContract({
-    address: poolAddress,
-    abi: POOL_ABI,
-    functionName: "reserve0",
+  const {
+    amountIn,
+    setAmountIn,
+    tokenIn,
+    setTokenIn,
+    estimatedOutput,
+    balance,
+    isApproved,
+    isApproving,
+    isConfirming,
+    isSubmitting,
+    isSuccess,
+    approve,
+    swap,
+    resetState,
+    hash,
+  } = useSwap({
+    poolAddress,
+    token0Address,
+    token1Address,
   });
 
-  const { data: reserve1 } = useReadContract({
-    address: poolAddress,
-    abi: POOL_ABI,
-    functionName: "reserve1",
+  // Monitor transaction
+  useWaitForTransactionReceipt({
+    hash: hash as Address,
   });
 
-  // Read user token balance
-  const currentTokenAddress =
-    tokenIn === "token0" ? token0Address : token1Address;
-  const { data: tokenBalance } = useReadContract({
-    address: currentTokenAddress,
-    abi: ERC20_ABI,
-    functionName: "balanceOf",
-    args: [address as Address],
-  });
-
-  // Read user allowance
-  const { data: allowance } = useReadContract({
-    address: currentTokenAddress,
-    abi: ERC20_ABI,
-    functionName: "allowance",
-    args: [address as Address, poolAddress],
-  });
-
-  // Calculate estimated output based on constant product formula
-  const calculateOutput = () => {
-    if (!amountIn || !reserve0 || !reserve1) {
-      return "0";
+  // Handle transaction success
+  useEffect(() => {
+    if (isSuccess) {
+      toast.success("Swap completed successfully!");
+      resetState();
     }
+  }, [isSuccess, resetState]);
 
-    const amountInWei = parseEther(amountIn);
-    const isToken0In = tokenIn === "token0";
-    const reserveIn = isToken0In ? reserve0 : reserve1;
-    const reserveOut = isToken0In ? reserve1 : reserve0;
-
-    console.log("Swap calculation:", {
-      amountInWei: amountInWei.toString(),
-      reserveIn: reserveIn.toString(),
-      reserveOut: reserveOut.toString(),
-      isToken0In,
-    });
-
-    // x * y = k formula with 0.3% fee
-    const amountInWithFee = amountInWei * 997n;
-    const numerator = amountInWithFee * reserveOut;
-    const denominator = reserveIn * 1000n + amountInWithFee;
-
-    const result = formatEther(numerator / denominator);
-    return result;
-  };
-
-  const estimatedOutput = calculateOutput();
-  const isApproved =
-    allowance && tokenBalance && allowance >= parseEther(amountIn || "0");
-
-  // Handle approval transaction
-  const handleApprove = () => {
+  const handleApprove = async () => {
     try {
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toastIdRef.current = toast.loading("Approving token...");
-      writeContract({
-        address: currentTokenAddress,
-        abi: ERC20_ABI,
-        functionName: "approve",
-        args: [poolAddress, maxUint256], // Infinite approval
-      });
-    } catch (error) {
-      console.error(error);
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toast.error("Approval failed");
+      await approve();
+    } catch {
+      // Error handled in hook
     }
   };
 
-  // Handle swap transaction
   const handleSwap = async () => {
-    if (!amountIn) return;
-
     try {
-      // Check if pool has liquidity before swapping
-      if (!reserve0 || !reserve1 || reserve0 === 0n || reserve1 === 0n) {
-        toast.error("Pool has no liquidity! Add liquidity first.");
-        return;
-      }
-
-      console.log("Swap params:", {
-        poolAddress,
-        amountIn: parseEther(amountIn).toString(),
-        tokenIn: currentTokenAddress,
-        reserve0: reserve0?.toString(),
-        reserve1: reserve1?.toString(),
-      });
-
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toastIdRef.current = toast.loading("Swapping tokens...");
-      const txHash = await writeContractAsync({
-        address: poolAddress,
-        abi: POOL_ABI,
-        functionName: "swap",
-        args: [parseEther(amountIn), currentTokenAddress],
-      });
-      setHash(txHash as Address);
-    } catch (error) {
-      console.error("Swap error:", error);
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      // Handle gas limit error specifically
-      if (error instanceof Error && error.message.includes("gas limit")) {
-        toast.error("Gas limit too high. Pool may have no liquidity.");
-      } else if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("Swap failed");
-      }
+      await swap();
+    } catch {
+      // Error handled in hook
     }
   };
 
-  // Handle success callback
-  const handleSuccess = () => {
-    if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current); // Clear any pending toasts
-    
-    toast.success("Swap completed successfully!");
-    setAmountIn("");
-    setHash(undefined);
+  const toggleTokenIn = () => {
+    setTokenIn(tokenIn === "token0" ? "token1" : "token0");
   };
+
+  // Disable all buttons during any transaction (submitting, approval, or confirmation)
+  const isTransactionPending = isSubmitting || isConfirming || isApproving;
+
+  const currentTokenSymbol = tokenIn === "token0" ? "TOKEN0" : "TOKEN1";
+  const outputTokenSymbol = tokenIn === "token0" ? "TOKEN1" : "TOKEN0";
 
   if (!address) {
     return (
-      <div className="p-8 text-center text-gray-400">
-        <p>Connect your wallet to start swapping</p>
-      </div>
+      <Card padding="lg" className="max-w-md mx-auto text-center">
+        <p className="text-gray-400">Connect your wallet to start swapping</p>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-gray-800 rounded-xl p-6 shadow-xl max-w-md mx-auto">
+    <Card padding="lg" className="max-w-md mx-auto">
       <h2 className="text-2xl font-bold text-white mb-6">Swap Tokens</h2>
 
-      {/* Transaction Monitor */}
-      {hash && <TransactionMonitor hash={hash} onSuccess={handleSuccess} />}
+      {hash && <TransactionMonitor hash={hash} />}
 
       {/* Input Section */}
       <div className="space-y-4">
@@ -273,25 +110,24 @@ export const SwapInterface = ({
           <div className="flex justify-between mb-2">
             <label className="text-sm text-gray-400">From</label>
             <span className="text-sm text-gray-400">
-              Balance: {formatEther(tokenBalance || 0n)}
+              Balance: {formatEther(balance || 0n)}
             </span>
           </div>
           <div className="flex gap-2">
-            <input
+            <Input
               type="number"
               value={amountIn}
               onChange={(e) => setAmountIn(e.target.value)}
               placeholder="0.0"
-              className="flex-1 bg-transparent text-white text-xl outline-none"
+              className="flex-1 text-xl"
+              disabled={isTransactionPending}
             />
-            <button
-              onClick={() =>
-                setTokenIn(tokenIn === "token0" ? "token1" : "token0")
-              }
-              className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm transition"
-            >
-              {tokenIn === "token0" ? "TOKEN0" : "TOKEN1"}
-            </button>
+            <TokenSelectButton
+              symbol={currentTokenSymbol}
+              isActive={true}
+              onClick={toggleTokenIn}
+              disabled={isTransactionPending}
+            />
           </div>
         </div>
 
@@ -308,16 +144,19 @@ export const SwapInterface = ({
             To (Estimated)
           </label>
           <div className="flex gap-2">
-            <input
+            <Input
               type="text"
               value={estimatedOutput}
               readOnly
               placeholder="0.0"
-              className="flex-1 bg-transparent text-white text-xl outline-none"
+              className="flex-1 text-xl"
+              disabled={isTransactionPending}
             />
-            <span className="px-3 py-1 bg-gray-700 rounded text-sm">
-              {tokenIn === "token0" ? "TOKEN1" : "TOKEN0"}
-            </span>
+            <TokenSelectButton
+              symbol={outputTokenSymbol}
+              isActive={false}
+              disabled={true}
+            />
           </div>
         </div>
       </div>
@@ -337,30 +176,38 @@ export const SwapInterface = ({
       )}
 
       {/* Action Button */}
-      <button
-        onClick={!isApproved ? handleApprove : handleSwap}
-        disabled={isPending || isConfirming || !amountIn}
-        className={`w-full mt-6 py-4 rounded-xl font-bold text-lg transition ${
-          isPending || isConfirming
-            ? "bg-yellow-600 text-white"
-            : !isApproved
-              ? "bg-blue-600 hover:bg-blue-700 text-white"
-              : "bg-green-600 hover:bg-green-700 text-white"
-        } disabled:opacity-50 disabled:cursor-not-allowed`}
-      >
-        {isConfirming
-          ? "Confirming..."
-          : !isApproved
-            ? "Approve Token"
-            : "Swap"}
-      </button>
+      {!isApproved ? (
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          className="mt-6"
+          onClick={handleApprove}
+          isLoading={isApproving}
+          disabled={isTransactionPending || !amountIn}
+        >
+          Approve Token
+        </Button>
+      ) : (
+        <Button
+          variant="success"
+          size="lg"
+          fullWidth
+          className="mt-6"
+          onClick={handleSwap}
+          isLoading={isSubmitting}
+          disabled={isTransactionPending || !amountIn}
+        >
+          {isConfirming ? "Confirming..." : "Swap"}
+        </Button>
+      )}
 
       {/* Status Messages */}
-      {isConfirmed && (
+      {isSuccess && (
         <div className="mt-4 p-3 bg-green-900/50 text-green-400 rounded-lg text-center">
           ✓ Transaction Confirmed
         </div>
       )}
-    </div>
+    </Card>
   );
 };

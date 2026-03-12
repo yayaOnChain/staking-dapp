@@ -1,85 +1,15 @@
-import { useState, useRef } from "react";
-import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-} from "wagmi";
-import { parseEther, formatEther, maxUint256, type Address } from "viem";
+import { useEffect } from "react";
+import { useAccount } from "wagmi";
+import { formatEther, parseEther, type Address } from "viem";
 import { toast } from "sonner";
 import { TransactionMonitor } from "../web3/TransactionToast";
-
-// Farm Contract ABI
-const FARM_ABI = [
-  {
-    inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
-    name: "deposit",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "uint256", name: "amount", type: "uint256" }],
-    name: "withdraw",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "address", name: "_user", type: "address" }],
-    name: "pendingReward",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "address", name: "", type: "address" }],
-    name: "userInfo",
-    outputs: [
-      { internalType: "uint256", name: "amount", type: "uint256" },
-      { internalType: "uint256", name: "rewardDebt", type: "uint256" },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "totalStaked",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
-
-const ERC20_ABI = [
-  {
-    inputs: [
-      { internalType: "address", name: "spender", type: "address" },
-      { internalType: "uint256", name: "amount", type: "uint256" },
-    ],
-    name: "approve",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "address", name: "account", type: "address" }],
-    name: "balanceOf",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "address", name: "owner", type: "address" },
-      { internalType: "address", name: "spender", type: "address" },
-    ],
-    name: "allowance",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
+import { useYieldFarm } from "../../hooks";
+import {
+  Card,
+  Button,
+  Input,
+  StatBox,
+} from "../../components/ui";
 
 interface YieldFarmDashboardProps {
   farmAddress: Address;
@@ -88,180 +18,94 @@ interface YieldFarmDashboardProps {
 }
 
 /**
- * Complete Yield Farm Dashboard with stake/unstake/harvest functionality
+ * Refactored Yield Farm Dashboard with clean architecture
+ * Uses custom hooks for business logic and shared UI components
  */
 export const YieldFarmDashboard = ({
   farmAddress,
   lpTokenAddress,
 }: YieldFarmDashboardProps) => {
   const { address } = useAccount();
-  const [amount, setAmount] = useState("");
-  const [hash, setHash] = useState<Address | undefined>();
-  
-  // Track toast IDs to prevent duplicates
-  const toastIdRef = useRef<string | number | null>(null);
 
-  const { writeContract, writeContractAsync, isPending } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({ hash });
-
-  // Farm statistics
-  const { data: totalStaked } = useReadContract({
-    address: farmAddress,
-    abi: FARM_ABI,
-    functionName: "totalStaked",
+  const {
+    amount,
+    setAmount,
+    totalStaked,
+    lpBalance,
+    stakedAmount,
+    pendingRewards,
+    isApproved,
+    isApproving,
+    isConfirming,
+    isSubmitting,
+    isSuccess,
+    hash,
+    approve,
+    deposit,
+    withdraw,
+    harvest,
+    resetState,
+  } = useYieldFarm({
+    farmAddress,
+    lpTokenAddress,
   });
 
-  // User LP balance
-  const { data: lpBalance } = useReadContract({
-    address: lpTokenAddress,
-    abi: ERC20_ABI,
-    functionName: "balanceOf",
-    args: [address as Address],
-  });
+  // Handle transaction success
+  useEffect(() => {
+    if (isSuccess) {
+      toast.success("Transaction confirmed!");
+      resetState();
+    }
+  }, [isSuccess, resetState]);
 
-  // User allowance
-  const { data: allowance } = useReadContract({
-    address: lpTokenAddress,
-    abi: ERC20_ABI,
-    functionName: "allowance",
-    args: [address as Address, farmAddress],
-  });
-
-  // User staked info
-  const { data: userInfo } = useReadContract({
-    address: farmAddress,
-    abi: FARM_ABI,
-    functionName: "userInfo",
-    args: [address as Address],
-  });
-
-  // User pending rewards - auto refresh
-  const { data: pendingRewards } = useReadContract({
-    address: farmAddress,
-    abi: FARM_ABI,
-    functionName: "pendingReward",
-    args: [address as Address],
-  });
-
-  const stakedAmount = formatEther(userInfo?.[0] || 0n);
-  
-  const isApproved =
-    allowance && lpBalance && allowance >= parseEther(amount || "0");
-
-  // Handle approval
-  const handleApprove = () => {
+  const handleApprove = async () => {
     try {
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toastIdRef.current = toast.loading("Approving LP tokens...");
-      writeContract({
-        address: lpTokenAddress,
-        abi: ERC20_ABI,
-        functionName: "approve",
-        args: [farmAddress, maxUint256],
-      });
-    } catch (error) {
-      console.error(error);
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toast.error("Approval failed");
+      await approve();
+    } catch {
+      // Error handled in hook
     }
   };
 
-  // Handle deposit
   const handleDeposit = async () => {
     try {
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toastIdRef.current = toast.loading("Staking LP tokens...");
-      const txHash = await writeContractAsync({
-        address: farmAddress,
-        abi: FARM_ABI,
-        functionName: "deposit",
-        args: [parseEther(amount)],
-        gas: 500000n, // ~500k gas for deposit
-      });
-      setHash(txHash as Address);
-    } catch (error) {
-      console.error(error);
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toast.error("Deposit failed");
+      await deposit();
+    } catch {
+      // Error handled in hook
     }
   };
 
-  // Handle withdraw
   const handleWithdraw = async () => {
     try {
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toastIdRef.current = toast.loading("Unstaking LP tokens...");
-      const txHash = await writeContractAsync({
-        address: farmAddress,
-        abi: FARM_ABI,
-        functionName: "withdraw",
-        args: [parseEther(amount)],
-        gas: 500000n, // ~500k gas for withdraw
-      });
-      setHash(txHash as Address);
-    } catch (error) {
-      console.error(error);
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toast.error("Withdraw failed");
+      await withdraw();
+    } catch {
+      // Error handled in hook
     }
   };
 
-  // Handle harvest only
   const handleHarvest = async () => {
     try {
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toastIdRef.current = toast.loading("Harvesting rewards...");
-      const txHash = await writeContractAsync({
-        address: farmAddress,
-        abi: FARM_ABI,
-        functionName: "withdraw",
-        args: [0n], // Withdraw 0 = harvest only
-        gas: 300000n, // ~300k gas for harvest only
-      });
-      setHash(txHash as Address);
-    } catch (error) {
-      console.error(error);
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toast.error("Harvest failed");
+      await harvest();
+    } catch {
+      // Error handled in hook
     }
   };
 
-  const handleSuccess = () => {
-    if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current); // Clear any pending toasts
-    
-    toast.success("Transaction confirmed!");
-    setAmount("");
-    setHash(undefined);
-  };
+  // Disable all buttons during any transaction (submitting, approval, or confirmation)
+  const isTransactionPending = isSubmitting || isConfirming || isApproving;
 
   if (!address) {
     return (
-      <div className="p-8 text-center text-gray-400">
-        <p>Connect your wallet to start farming</p>
-      </div>
+      <Card padding="lg" className="max-w-lg mx-auto text-center border border-yellow-500/20">
+        <p className="text-gray-400">Connect your wallet to start farming</p>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-linear-to-br from-gray-800 to-gray-900 rounded-xl p-6 shadow-xl max-w-lg mx-auto border border-yellow-500/20">
+    <Card
+      padding="lg"
+      className="max-w-lg mx-auto border border-yellow-500/20 bg-linear-to-br from-gray-800 to-gray-900"
+    >
       <div className="flex items-center gap-3 mb-6">
         <span className="text-3xl">🌾</span>
         <div>
@@ -270,26 +114,25 @@ export const YieldFarmDashboard = ({
         </div>
       </div>
 
-      {hash && <TransactionMonitor hash={hash} onSuccess={handleSuccess} />}
+      {hash && <TransactionMonitor hash={hash} />}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
-          <p className="text-xs text-gray-400 mb-1">Your LP Balance</p>
-          <p className="text-xl font-mono text-white">
-            {formatEther(lpBalance || 0n)}
-          </p>
-        </div>
-        <div className="bg-gray-900/50 p-4 rounded-lg border border-green-700">
-          <p className="text-xs text-gray-400 mb-1">Your Staked</p>
-          <p className="text-xl font-mono text-green-400">{stakedAmount}</p>
-        </div>
-        <div className="bg-gray-900/50 p-4 rounded-lg border border-yellow-700 col-span-2">
-          <p className="text-xs text-gray-400 mb-1">Pending Rewards</p>
-          <p className="text-2xl font-mono text-yellow-400">
-            {formatEther(pendingRewards || 0n)}
-          </p>
-        </div>
+        <StatBox
+          label="Your LP Balance"
+          value={formatEther(lpBalance || 0n)}
+        />
+        <StatBox
+          label="Your Staked"
+          value={stakedAmount}
+          variant="success"
+        />
+        <StatBox
+          label="Pending Rewards"
+          value={formatEther(pendingRewards || 0n)}
+          variant="warning"
+          className="col-span-2"
+        />
       </div>
 
       {/* Total Pool Stats */}
@@ -302,75 +145,72 @@ export const YieldFarmDashboard = ({
 
       {/* Input Section */}
       <div className="space-y-4">
-        <div className="bg-gray-900 rounded-lg p-4">
-          <label className="text-sm text-gray-400 mb-2 block">
-            Amount of LP Tokens
-          </label>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.0"
-            className="w-full bg-transparent text-white text-xl outline-none"
-          />
-        </div>
+        <Input
+          label="Amount of LP Tokens"
+          type="number"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder="0.0"
+          disabled={isTransactionPending}
+        />
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3">
           {!isApproved ? (
-            <button
+            <Button
+              variant="primary"
+              className="col-span-2"
               onClick={handleApprove}
-              disabled={isPending || isConfirming}
-              className="col-span-2 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+              isLoading={isApproving}
+              disabled={isTransactionPending}
             >
               Approve LP Tokens
-            </button>
+            </Button>
           ) : (
             <>
-              <button
+              <Button
+                variant="success"
                 onClick={handleDeposit}
-                disabled={isPending || isConfirming || !amount}
-                className="py-3 bg-green-600 hover:bg-green-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                isLoading={isSubmitting}
+                disabled={isTransactionPending || !amount || parseEther(amount) === 0n || parseEther(amount) > lpBalance!}
               >
                 Stake
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
                 onClick={handleWithdraw}
-                disabled={isPending || isConfirming || !amount}
-                className="py-3 bg-red-600 hover:bg-red-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                isLoading={isSubmitting}
+                disabled={isTransactionPending || !amount || parseEther(amount) === 0n || stakedAmount === "0" || parseEther(amount) > parseEther(stakedAmount)}
               >
                 Unstake
-              </button>
+              </Button>
             </>
           )}
         </div>
 
         {/* Harvest Button */}
-        <button
+        <Button
+          variant="warning"
+          fullWidth
           onClick={handleHarvest}
-          disabled={
-            isPending ||
-            isConfirming ||
-            !pendingRewards ||
-            pendingRewards === 0n
-          }
-          className="w-full py-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed"
+          isLoading={isSubmitting}
+          disabled={isTransactionPending || !pendingRewards || pendingRewards === 0n}
         >
           🎁 Harvest Rewards
-        </button>
+        </Button>
       </div>
 
-      {isConfirmed && (
+      {isSuccess && (
         <div className="mt-4 p-3 bg-green-900/50 text-green-400 rounded-lg text-center">
           ✓ Transaction Confirmed
         </div>
       )}
 
-      {isPending && (
+      {(isConfirming || isSubmitting) && (
         <div className="mt-4 p-3 bg-yellow-900/50 text-yellow-400 rounded-lg text-center">
           ⏳ Waiting for confirmation...
         </div>
       )}
-    </div>
+    </Card>
   );
 };

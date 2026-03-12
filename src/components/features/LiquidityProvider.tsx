@@ -1,95 +1,16 @@
-import { useState, useEffect, useRef } from "react";
-import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-} from "wagmi";
-import { parseEther, formatEther, maxUint256, type Address } from "viem";
+import { useEffect } from "react";
+import { useAccount } from "wagmi";
+import { formatEther, type Address } from "viem";
 import { toast } from "sonner";
 import { TransactionMonitor } from "../web3/TransactionToast";
-
-// LP Contract ABI
-const LP_ABI = [
-  {
-    inputs: [
-      { internalType: "uint256", name: "amount0", type: "uint256" },
-      { internalType: "uint256", name: "amount1", type: "uint256" },
-    ],
-    name: "addLiquidity",
-    outputs: [{ internalType: "uint256", name: "lpTokens", type: "uint256" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "uint256", name: "lpTokens", type: "uint256" }],
-    name: "removeLiquidity",
-    outputs: [
-      { internalType: "uint256", name: "amount0", type: "uint256" },
-      { internalType: "uint256", name: "amount1", type: "uint256" },
-    ],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "totalSupply",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "reserve0",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "reserve1",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
-
-const ERC20_ABI = [
-  {
-    inputs: [
-      { internalType: "address", name: "spender", type: "address" },
-      { internalType: "uint256", name: "amount", type: "uint256" },
-    ],
-    name: "approve",
-    outputs: [{ internalType: "bool", name: "", type: "bool" }],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "address", name: "account", type: "address" }],
-    name: "balanceOf",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [{ internalType: "address", name: "account", type: "address" }],
-    name: "balanceOf",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      { internalType: "address", name: "owner", type: "address" },
-      { internalType: "address", name: "spender", type: "address" },
-    ],
-    name: "allowance",
-    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function",
-  },
-] as const;
+import { useLiquidity } from "../../hooks";
+import {
+  Card,
+  Button,
+  Input,
+  StatBox,
+} from "../../components/ui";
+import { cn } from "../../lib/utils";
 
 interface LiquidityProviderProps {
   poolAddress: Address;
@@ -98,7 +19,8 @@ interface LiquidityProviderProps {
 }
 
 /**
- * Complete Liquidity Provider Interface with deposit/withdraw functionality
+ * Refactored Liquidity Provider Interface with clean architecture
+ * Uses custom hooks for business logic and shared UI components
  */
 export const LiquidityProvider = ({
   poolAddress,
@@ -106,269 +28,146 @@ export const LiquidityProvider = ({
   token1Address,
 }: LiquidityProviderProps) => {
   const { address } = useAccount();
-  const [amount0, setAmount0] = useState("");
-  const [amount1, setAmount1] = useState("");
-  const [hash, setHash] = useState<Address | undefined>();
-  const [mode, setMode] = useState<"add" | "remove">("add");
-  const [isApproved, setIsApproved] = useState(false);
-  
-  // Track toast IDs to prevent duplicates
-  const toastIdRef = useRef<string | number | null>(null);
 
-  const { writeContract, writeContractAsync, isPending } = useWriteContract();
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({ hash });
-
-  // Pool statistics
-  const { data: totalSupply } = useReadContract({
-    address: poolAddress,
-    abi: LP_ABI,
-    functionName: "totalSupply",
+  const {
+    mode,
+    setMode,
+    amount0,
+    setAmount0,
+    amount1,
+    setAmount1,
+    expectedLP,
+    reserve0,
+    reserve1,
+    token0Balance,
+    token1Balance,
+    isApproved,
+    isApproving,
+    isConfirming,
+    isSubmitting,
+    isSuccess,
+    hash,
+    addLiquidity,
+    removeLiquidity,
+    approve,
+    resetState,
+  } = useLiquidity({
+    poolAddress,
+    token0Address,
+    token1Address,
   });
 
-  const { data: reserve0 } = useReadContract({
-    address: poolAddress,
-    abi: LP_ABI,
-    functionName: "reserve0",
-  });
-
-  const { data: reserve1 } = useReadContract({
-    address: poolAddress,
-    abi: LP_ABI,
-    functionName: "reserve1",
-  });
-
-  // User balances
-  const { data: token0Balance } = useReadContract({
-    address: token0Address,
-    abi: ERC20_ABI,
-    functionName: "balanceOf",
-    args: [address as Address],
-  });
-
-  const { data: token1Balance } = useReadContract({
-    address: token1Address,
-    abi: ERC20_ABI,
-    functionName: "balanceOf",
-    args: [address as Address],
-  });
-
-  const { data: token0Allowance } = useReadContract({
-    address: token0Address,
-    abi: ERC20_ABI,
-    functionName: "allowance",
-    args: [address as Address, poolAddress],
-  });
-
-  const { data: token1Allowance } = useReadContract({
-    address: token1Address,
-    abi: ERC20_ABI,
-    functionName: "allowance",
-    args: [address as Address, poolAddress],
-  });
-
+  // Handle transaction success
   useEffect(() => {
-    if (!token0Allowance || !token1Allowance || !amount0 || !amount1) {
-      setIsApproved(false);
-      return;
+    if (isSuccess) {
+      toast.success(mode === "add" ? "Liquidity added!" : "Liquidity removed!");
+      resetState();
     }
-    setIsApproved(
-      token0Allowance >= parseEther(amount0) &&
-        token1Allowance >= parseEther(amount1),
-    );
-  }, [token0Allowance, token1Allowance, amount0, amount1]);
+  }, [isSuccess, mode, resetState]);
 
-  // Calculate expected LP tokens
-  const calculateLP = () => {
-    if (!amount0 || !amount1 || !totalSupply || !reserve0 || !reserve1)
-      return "0";
-
-    if (totalSupply === 0n) {
-      return amount0; // Initial liquidity
-    }
-
-    const liquidity0 = (parseEther(amount0) * totalSupply) / reserve0;
-    const liquidity1 = (parseEther(amount1) * totalSupply) / reserve1;
-
-    return formatEther(liquidity0 < liquidity1 ? liquidity0 : liquidity1);
-  };
-
-  const expectedLP = calculateLP();
-
-  // Handle approval for both tokens
-  const handleApprove = () => {
+  const handleApprove = async () => {
     try {
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toastIdRef.current = toast.loading("Approving tokens...");
-      writeContract({
-        address: token0Address,
-        abi: ERC20_ABI,
-        functionName: "approve",
-        args: [poolAddress, maxUint256],
-      });
-      writeContract({
-        address: token1Address,
-        abi: ERC20_ABI,
-        functionName: "approve",
-        args: [poolAddress, maxUint256],
-      });
-    } catch (error) {
-      console.error(error);
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toast.error("Approval failed");
+      await approve();
+    } catch {
+      // Error handled in hook
     }
   };
 
-  // Handle add liquidity
   const handleAddLiquidity = async () => {
     try {
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toastIdRef.current = toast.loading("Adding liquidity...");
-      const txHash = await writeContractAsync({
-        address: poolAddress,
-        abi: LP_ABI,
-        functionName: "addLiquidity",
-        args: [parseEther(amount0), parseEther(amount1)],
-        gas: 800000n, // ~800k gas for add liquidity (2 token transfers)
-      });
-      setHash(txHash as Address);
-    } catch (error) {
-      console.error(error);
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toast.error("Failed to add liquidity");
+      await addLiquidity();
+    } catch {
+      // Error handled in hook
     }
   };
 
-  // Handle remove liquidity
   const handleRemoveLiquidity = async () => {
     try {
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-      
-      toastIdRef.current = toast.loading("Removing liquidity...");
-      const txHash = await writeContractAsync({
-        address: poolAddress,
-        abi: LP_ABI,
-        functionName: "removeLiquidity",
-        args: [parseEther(amount0)], // Using amount0 as LP token amount in remove mode
-        gas: 800000n, // ~800k gas for remove liquidity
-      });
-      setHash(txHash as Address);
-    } catch (error) {
-      console.error(error);
-      if (toastIdRef.current)
-        toast.dismiss(toastIdRef.current);
-
-      toast.error("Failed to remove liquidity");
+      await removeLiquidity();
+    } catch {
+      // Error handled in hook
     }
   };
 
-  const handleSuccess = () => {
-    if (toastIdRef.current)
-      toast.dismiss(toastIdRef.current); // Clear any pending toasts
-
-    toast.success(mode === "add" ? "Liquidity added!" : "Liquidity removed!");
-    setAmount0("");
-    setAmount1("");
-    setHash(undefined);
-  };
+  // Disable all buttons during any transaction (submitting, approval, or confirmation)
+  const isTransactionPending = isSubmitting || isConfirming || isApproving;
 
   if (!address) {
     return (
-      <div className="p-8 text-center text-gray-400">
-        <p>Connect your wallet to provide liquidity</p>
-      </div>
+      <Card padding="lg" className="max-w-lg mx-auto text-center">
+        <p className="text-gray-400">Connect your wallet to provide liquidity</p>
+      </Card>
     );
   }
 
   return (
-    <div className="bg-gray-800 rounded-xl p-6 shadow-xl max-w-lg mx-auto">
+    <Card padding="lg" className="max-w-lg mx-auto">
       <h2 className="text-2xl font-bold text-white mb-6">Liquidity Pool</h2>
 
-      {hash && <TransactionMonitor hash={hash} onSuccess={handleSuccess} />}
+      {hash && <TransactionMonitor hash={hash} />}
 
       {/* Mode Toggle */}
       <div className="flex gap-2 mb-6">
-        <button
+        <Button
+          variant={mode === "add" ? "primary" : "secondary"}
+          className="flex-1"
           onClick={() => setMode("add")}
-          className={`flex-1 py-2 rounded-lg font-medium transition ${
-            mode === "add"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-700 text-gray-400"
-          }`}
+          disabled={isTransactionPending}
         >
           Add Liquidity
-        </button>
-        <button
+        </Button>
+        <Button
+          variant={mode === "remove" ? "danger" : "secondary"}
+          className="flex-1"
           onClick={() => setMode("remove")}
-          className={`flex-1 py-2 rounded-lg font-medium transition ${
-            mode === "remove"
-              ? "bg-red-600 text-white"
-              : "bg-gray-700 text-gray-400"
-          }`}
+          disabled={isTransactionPending}
         >
           Remove Liquidity
-        </button>
+        </Button>
       </div>
 
       {/* Pool Stats */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-gray-900 p-4 rounded-lg">
-          <p className="text-xs text-gray-400">Pool Reserve Token 0</p>
-          <p className="text-lg font-mono text-white">
-            {formatEther(reserve0 || 0n)}
-          </p>
-        </div>
-        <div className="bg-gray-900 p-4 rounded-lg">
-          <p className="text-xs text-gray-400">Pool Reserve Token 1</p>
-          <p className="text-lg font-mono text-white">
-            {formatEther(reserve1 || 0n)}
-          </p>
-        </div>
+        <StatBox
+          label="Pool Reserve Token 0"
+          value={formatEther(reserve0 || 0n)}
+        />
+        <StatBox
+          label="Pool Reserve Token 1"
+          value={formatEther(reserve1 || 0n)}
+        />
       </div>
 
       {/* Input Section */}
       {mode === "add" ? (
         <div className="space-y-4">
-          <div className="bg-gray-900 rounded-lg p-4">
-            <div className="flex justify-between mb-2">
-              <label className="text-sm text-gray-400">Token 0 Amount</label>
+          <Input
+            label="Token 0 Amount"
+            type="number"
+            value={amount0}
+            onChange={(e) => setAmount0(e.target.value)}
+            placeholder="0.0"
+            disabled={isTransactionPending}
+            rightElement={
               <span className="text-sm text-gray-400">
-                Balance: {formatEther(token0Balance || 0n)}
+                Bal: {formatEther(token0Balance || 0n)}
               </span>
-            </div>
-            <input
-              type="number"
-              value={amount0}
-              onChange={(e) => setAmount0(e.target.value)}
-              placeholder="0.0"
-              className="w-full bg-transparent text-white text-xl outline-none"
-            />
-          </div>
+            }
+          />
 
-          <div className="bg-gray-900 rounded-lg p-4">
-            <div className="flex justify-between mb-2">
-              <label className="text-sm text-gray-400">Token 1 Amount</label>
+          <Input
+            label="Token 1 Amount"
+            type="number"
+            value={amount1}
+            onChange={(e) => setAmount1(e.target.value)}
+            placeholder="0.0"
+            disabled={isTransactionPending}
+            rightElement={
               <span className="text-sm text-gray-400">
-                Balance: {formatEther(token1Balance || 0n)}
+                Bal: {formatEther(token1Balance || 0n)}
               </span>
-            </div>
-            <input
-              type="number"
-              value={amount1}
-              onChange={(e) => setAmount1(e.target.value)}
-              placeholder="0.0"
-              className="w-full bg-transparent text-white text-xl outline-none"
-            />
-          </div>
+            }
+          />
 
           {/* Expected LP Tokens */}
           {amount0 && amount1 && (
@@ -380,86 +179,79 @@ export const LiquidityProvider = ({
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="bg-gray-900 rounded-lg p-4">
-            <label className="text-sm text-gray-400 mb-2 block">
-              LP Tokens to Remove
-            </label>
-            <input
-              type="number"
-              value={amount0}
-              onChange={(e) => setAmount0(e.target.value)}
-              placeholder="0.0"
-              className="w-full bg-transparent text-white text-xl outline-none"
-            />
-          </div>
+          <Input
+            label="LP Tokens to Remove"
+            type="number"
+            value={amount0}
+            onChange={(e) => setAmount0(e.target.value)}
+            placeholder="0.0"
+            disabled={isTransactionPending}
+          />
         </div>
       )}
 
-      {/* Action Button */}
+      {/* Action Buttons */}
       {mode === "add" && !isApproved && (
-        <button
+        <Button
+          variant="primary"
+          size="lg"
+          fullWidth
+          className="mt-6"
           onClick={handleApprove}
-          disabled={isPending || isConfirming || !amount0 || !amount1}
-          className="w-full mt-6 py-4 rounded-xl font-bold text-lg bg-blue-600 hover:bg-blue-700 text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+          isLoading={isApproving}
+          disabled={isTransactionPending || !amount0 || !amount1}
         >
-          {isConfirming ? "Confirming..." : "🔓 Approve Both Tokens"}
-        </button>
+          🔓 Approve Both Tokens
+        </Button>
       )}
 
       {(mode === "remove" || isApproved) && (
-        <button
+        <Button
+          variant={mode === "add" ? "success" : "danger"}
+          size="lg"
+          fullWidth
+          className="mt-6"
           onClick={mode === "add" ? handleAddLiquidity : handleRemoveLiquidity}
+          isLoading={isSubmitting}
           disabled={
-            isPending ||
-            isConfirming ||
+            isTransactionPending ||
             !amount0 ||
             (mode === "add" && !amount1)
           }
-          className={`w-full mt-6 py-4 rounded-xl font-bold text-lg transition ${
-            isPending || isConfirming
-              ? "bg-yellow-600 text-white"
-              : mode === "add"
-                ? "bg-green-600 hover:bg-green-700 text-white"
-                : "bg-red-600 hover:bg-red-700 text-white"
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {isConfirming
             ? "Confirming..."
             : mode === "add"
               ? "💧 Add Liquidity"
               : "🔥 Remove Liquidity"}
-        </button>
+        </Button>
       )}
 
-      {/* ✅ Approval Status Indicator */}
+      {/* Approval Status Indicator */}
       {mode === "add" && (
         <div className="mt-4 flex justify-center gap-4 text-sm">
           <span
-            className={
-              token0Allowance && token0Allowance > 0n
-                ? "text-green-400"
-                : "text-gray-500"
-            }
+            className={cn(
+              token0Balance && token0Balance > 0n ? "text-green-400" : "text-gray-500"
+            )}
           >
-            {token0Allowance && token0Allowance > 0n ? "✓" : "○"} Token 0
+            {token0Balance && token0Balance > 0n ? "✓" : "○"} Token 0
           </span>
           <span
-            className={
-              token1Allowance && token1Allowance > 0n
-                ? "text-green-400"
-                : "text-gray-500"
-            }
+            className={cn(
+              token1Balance && token1Balance > 0n ? "text-green-400" : "text-gray-500"
+            )}
           >
-            {token1Allowance && token1Allowance > 0n ? "✓" : "○"} Token 1
+            {token1Balance && token1Balance > 0n ? "✓" : "○"} Token 1
           </span>
         </div>
       )}
 
-      {isConfirmed && (
+      {isSuccess && (
         <div className="mt-4 p-3 bg-green-900/50 text-green-400 rounded-lg text-center">
           ✓ Transaction Confirmed
         </div>
       )}
-    </div>
+    </Card>
   );
 };
