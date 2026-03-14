@@ -7,9 +7,9 @@ interface SocialLink {
 }
 
 const SOCIAL_LINKS: SocialLink[] = [
-  { label: "GitHub", href: "https://github.com" },
-  { label: "Documentation", href: "https://docs.example.com" },
-  { label: "Twitter", href: "https://twitter.com" },
+  { label: "GitHub", href: "https://github.com/yayaOnChain/staking-dapp" },
+  { label: "Documentation", href: "https://github.com/yayaOnChain/staking-dapp/blob/main/README.md" },
+  { label: "Twitter", href: "https://x.com/yayaOnChain" },
 ];
 
 /**
