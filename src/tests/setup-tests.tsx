@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
+import React from 'react';
 
 // Cleanup after each test
 afterEach(() => {
@@ -9,7 +10,7 @@ afterEach(() => {
 
 // Mock viem functions
 vi.mock('viem', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof import('viem')>();
   return {
     ...actual,
     parseEther: vi.fn((value) => BigInt(Math.floor(parseFloat(value) * 1e18))),
@@ -32,7 +33,7 @@ vi.mock('viem', async (importOriginal) => {
 
 // Mock wagmi hooks
 vi.mock('wagmi', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof import('wagmi')>();
   return {
     ...actual,
     useAccount: vi.fn(() => ({
@@ -97,7 +98,7 @@ vi.mock('wagmi', async (importOriginal) => {
 
 // Mock Rainbow Kit
 vi.mock('@rainbow-me/rainbowkit', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof import('@rainbow-me/rainbowkit')>();
   return {
     ...actual,
     ConnectButton: vi.fn(function ConnectButton({ onClick }) {
@@ -108,7 +109,7 @@ vi.mock('@rainbow-me/rainbowkit', async (importOriginal) => {
 
 // Mock sonner toast
 vi.mock('sonner', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof import('sonner')>();
   return {
     ...actual,
     Toaster: vi.fn(() => <div data-testid="toaster" />),
@@ -124,7 +125,7 @@ vi.mock('sonner', async (importOriginal) => {
 
 // Mock @tanstack/react-query
 vi.mock('@tanstack/react-query', async (importOriginal) => {
-  const actual = await importOriginal();
+  const actual = await importOriginal<typeof import('@tanstack/react-query')>();
   return {
     ...actual,
     useQueryClient: vi.fn(() => ({
@@ -138,12 +139,12 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
 
 // Mock AppProviders
 vi.mock('./providers/AppProviders', () => ({
-  AppProviders: ({ children }) => <div data-testid="app-providers">{children}</div>,
+  AppProviders: ({ children }: { children: React.ReactNode }) => <div data-testid="app-providers">{children}</div>,
 }));
 
 // Mock ErrorBoundary
 vi.mock('./components/ui/ErrorBoundary', () => ({
-  ErrorBoundary: ({ children }) => <div data-testid="error-boundary">{children}</div>,
+  ErrorBoundary: ({ children }: { children: React.ReactNode }) => <div data-testid="error-boundary">{children}</div>,
 }));
 
 // Mock Navbar
