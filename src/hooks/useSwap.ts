@@ -5,6 +5,7 @@ import { parseEther, formatEther, type Address } from "viem";
 import { toast } from "sonner";
 import { LIQUIDITY_POOL_ABI, ERC20_ABI } from "@/abis";
 import { useApproval } from "@/hooks/useApproval";
+import { useTransactions } from "@/providers/TransactionProvider";
 import type { SwapMode } from "@/types";
 
 interface UseSwapParams {
@@ -45,6 +46,7 @@ export const useSwap = ({
   const [hash, setHash] = useState<Address | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
+  const { addTransaction, updateTransactionStatus } = useTransactions();
 
   // Determine current token addresses based on swap direction
   const currentTokenAddress = tokenIn === "token0" ? token0Address : token1Address;
@@ -60,7 +62,7 @@ export const useSwap = ({
   const { writeContractAsync } = useWriteContract();
 
   // Wait for transaction - isLoading is true while waiting for confirmation
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+  const { isLoading: isConfirming, isSuccess, isError: isTxError } = useWaitForTransactionReceipt({
     hash,
   });
 
@@ -128,6 +130,14 @@ export const useSwap = ({
       });
 
       setHash(txHash as Address);
+      addTransaction({
+        hash: txHash,
+        type: "Swap",
+        description: `Swap ${amountIn} ${tokenIn === "token0" ? "TOKEN0" : "TOKEN1"} for ${tokenIn === "token0" ? "TOKEN1" : "TOKEN0"}`,
+        status: "pending",
+        timestamp: Date.now(),
+      });
+      
       setIsSubmitting(false);
     } catch (error) {
       console.error("Swap error:", error);
@@ -143,7 +153,7 @@ export const useSwap = ({
       }
       throw error;
     }
-  }, [amountIn, reserve0, reserve1, poolAddress, currentTokenAddress, writeContractAsync]);
+  }, [amountIn, reserve0, reserve1, poolAddress, currentTokenAddress, writeContractAsync, tokenIn, addTransaction]);
 
   // Reset state
   const resetState = useCallback(() => {
@@ -155,7 +165,9 @@ export const useSwap = ({
 
   // Invalidate and refetch data after successful transaction
   useEffect(() => {
-    if (isSuccess) {
+    if (hash && isSuccess) {
+      updateTransactionStatus(hash, "success");
+      
       // Refetch all swap-related data
       refetchReserve0();
       refetchReserve1();
@@ -180,9 +192,13 @@ export const useSwap = ({
           );
         },
       });
+    } else if (hash && isTxError) {
+      updateTransactionStatus(hash, "failed");
     }
   }, [
     isSuccess,
+    isTxError,
+    hash,
     poolAddress,
     token0Address,
     token1Address,
@@ -191,6 +207,7 @@ export const useSwap = ({
     refetchTokenBalance,
     refetchAllowance,
     queryClient,
+    updateTransactionStatus,
   ]);
 
   return {

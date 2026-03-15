@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { SettingsProvider } from '@/providers/SettingsProvider';
+import { TransactionProvider } from '@/providers/TransactionProvider';
 
 // Mock QueryClient for tests
 const createTestQueryClient = () => {
@@ -27,7 +28,9 @@ export const TestProviders = ({ children }: TestProvidersProps) => {
   return (
     <QueryClientProvider client={queryClient}>
       <SettingsProvider>
-        {children}
+        <TransactionProvider>
+          {children}
+        </TransactionProvider>
       </SettingsProvider>
     </QueryClientProvider>
   );

@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { config } from "@/config/wagmi";
 import { darkTheme, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { SettingsProvider } from "./SettingsProvider";
+import { TransactionProvider } from "./TransactionProvider";
 
 /**
  * Create a query client for caching blockchain data
@@ -72,7 +73,11 @@ export const AppProviders = ({ children }: AppProvidersProps) => {
             appName: "Staking DApp",
           }}
         >
-          <SettingsProvider>{children}</SettingsProvider>
+          <SettingsProvider>
+            <TransactionProvider>
+              {children}
+            </TransactionProvider>
+          </SettingsProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

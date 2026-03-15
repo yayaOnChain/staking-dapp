@@ -5,6 +5,7 @@ import { parseEther, formatEther, type Address } from "viem";
 import { toast } from "sonner";
 import { YIELD_FARM_ABI, ERC20_ABI } from "@/abis";
 import { useApproval } from "@/hooks/useApproval";
+import { useTransactions } from "@/providers/TransactionProvider";
 
 interface UseYieldFarmParams {
   farmAddress: Address;
@@ -44,6 +45,7 @@ export const useYieldFarm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toastIdRef = useRef<string | number | null>(null);
   const queryClient = useQueryClient();
+  const { addTransaction, updateTransactionStatus } = useTransactions();
 
   // Setup approval hook
   const { isApproved, isApproving, approve, refetchAllowance } = useApproval({
@@ -56,7 +58,7 @@ export const useYieldFarm = ({
   const { writeContractAsync } = useWriteContract();
 
   // Wait for transaction - isLoading is true while waiting for confirmation
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+  const { isLoading: isConfirming, isSuccess, isError: isTxError } = useWaitForTransactionReceipt({
     hash,
   });
 
@@ -95,7 +97,9 @@ export const useYieldFarm = ({
 
   // Invalidate and refetch data after successful transaction
   useEffect(() => {
-    if (isSuccess) {
+    if (hash && isSuccess) {
+      updateTransactionStatus(hash, "success");
+      
       // Refetch all farm-related data
       refetchTotalStaked();
       refetchLpBalance();
@@ -119,9 +123,13 @@ export const useYieldFarm = ({
           );
         },
       });
+    } else if (hash && isTxError) {
+      updateTransactionStatus(hash, "failed");
     }
   }, [
     isSuccess,
+    isTxError,
+    hash,
     farmAddress,
     lpTokenAddress,
     refetchTotalStaked,
@@ -130,6 +138,7 @@ export const useYieldFarm = ({
     refetchPendingRewards,
     refetchAllowance,
     queryClient,
+    updateTransactionStatus,
   ]);
 
   // Handle deposit
@@ -148,6 +157,13 @@ export const useYieldFarm = ({
       });
 
       setHash(txHash as Address);
+      addTransaction({
+        hash: txHash,
+        type: "Stake",
+        description: `Stake ${amount} LP Tokens`,
+        status: "pending",
+        timestamp: Date.now(),
+      });
       setIsSubmitting(false);
       toast.loading("Transaction submitted! Waiting for confirmation...", {
         id: toastIdRef.current,
@@ -177,6 +193,13 @@ export const useYieldFarm = ({
       });
 
       setHash(txHash as Address);
+      addTransaction({
+        hash: txHash,
+        type: "Unstake",
+        description: `Unstake ${amount} LP Tokens`,
+        status: "pending",
+        timestamp: Date.now(),
+      });
       setIsSubmitting(false);
       toast.loading("Transaction submitted! Waiting for confirmation...", {
         id: toastIdRef.current,
@@ -204,6 +227,13 @@ export const useYieldFarm = ({
       });
 
       setHash(txHash as Address);
+      addTransaction({
+        hash: txHash,
+        type: "Harvest",
+        description: `Harvest Pending Rewards`,
+        status: "pending",
+        timestamp: Date.now(),
+      });
       setIsSubmitting(false);
       toast.loading("Transaction submitted! Waiting for confirmation...", {
         id: toastIdRef.current,
@@ -215,7 +245,7 @@ export const useYieldFarm = ({
       setIsSubmitting(false);
       throw error;
     }
-  }, [farmAddress, writeContractAsync]);
+  }, [farmAddress, writeContractAsync, addTransaction]);
 
   // Reset state
   const resetState = useCallback(() => {

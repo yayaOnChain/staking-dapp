@@ -5,6 +5,7 @@ import { parseEther, formatEther, type Address } from "viem";
 import { toast } from "sonner";
 import { LIQUIDITY_POOL_ABI, ERC20_ABI } from "@/abis";
 import { useApproval } from "@/hooks/useApproval";
+import { useTransactions } from "@/providers/TransactionProvider";
 import type { LiquidityMode } from "@/types";
 
 interface UseLiquidityParams {
@@ -54,6 +55,7 @@ export const useLiquidity = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toastIdRef = useRef<string | number | null>(null);
   const queryClient = useQueryClient();
+  const { addTransaction, updateTransactionStatus } = useTransactions();
 
   // Setup approvals for both tokens
   const token0Approval = useApproval({
@@ -75,7 +77,7 @@ export const useLiquidity = ({
   const { writeContractAsync } = useWriteContract();
 
   // Wait for transaction - isLoading is true while waiting for confirmation
-  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const { isLoading: isConfirming, isSuccess, isError: isTxError } = useWaitForTransactionReceipt({ hash });
 
   // Pool statistics
   const { data: totalSupply, refetch: refetchTotalSupply } = useReadContract({
@@ -159,6 +161,13 @@ export const useLiquidity = ({
       });
 
       setHash(txHash as Address);
+      addTransaction({
+        hash: txHash,
+        type: "Add Liquidity",
+        description: `Add ${amount0} TOKEN0 and ${amount1} TOKEN1 to Pool`,
+        status: "pending",
+        timestamp: Date.now(),
+      });
       setIsSubmitting(false);
     } catch (error) {
       console.error("Add liquidity error:", error);
@@ -167,7 +176,7 @@ export const useLiquidity = ({
       setIsSubmitting(false);
       throw error;
     }
-  }, [amount0, amount1, poolAddress, writeContractAsync]);
+  }, [amount0, amount1, poolAddress, writeContractAsync, addTransaction]);
 
   // Handle remove liquidity
   const removeLiquidity = useCallback(async () => {
@@ -185,6 +194,13 @@ export const useLiquidity = ({
       });
 
       setHash(txHash as Address);
+      addTransaction({
+        hash: txHash,
+        type: "Remove Liquidity",
+        description: `Remove ${amount0} LP tokens from Pool`,
+        status: "pending",
+        timestamp: Date.now(),
+      });
       setIsSubmitting(false);
     } catch (error) {
       console.error("Remove liquidity error:", error);
@@ -193,7 +209,7 @@ export const useLiquidity = ({
       setIsSubmitting(false);
       throw error;
     }
-  }, [amount0, poolAddress, writeContractAsync]);
+  }, [amount0, poolAddress, writeContractAsync, addTransaction]);
 
   // Reset state
   const resetState = useCallback(() => {
@@ -214,7 +230,9 @@ export const useLiquidity = ({
 
   // Invalidate and refetch data after successful transaction
   useEffect(() => {
-    if (isSuccess) {
+    if (hash && isSuccess) {
+      updateTransactionStatus(hash, "success");
+      
       // Refetch all pool-related data
       refetchTotalSupply();
       refetchReserve0();
@@ -242,9 +260,13 @@ export const useLiquidity = ({
           );
         },
       });
+    } else if (hash && isTxError) {
+      updateTransactionStatus(hash, "failed");
     }
   }, [
     isSuccess,
+    isTxError,
+    hash,
     poolAddress,
     token0Address,
     token1Address,
@@ -256,6 +278,7 @@ export const useLiquidity = ({
     token0Approval,
     token1Approval,
     queryClient,
+    updateTransactionStatus,
   ]);
 
   return {

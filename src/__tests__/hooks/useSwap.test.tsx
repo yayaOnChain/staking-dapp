@@ -6,13 +6,16 @@ import { renderHook, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { mockAddresses } from "@/tests/test-utils";
 import { useSwap } from "@/hooks/useSwap";
+import { TransactionProvider } from "@/providers/TransactionProvider";
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
   });
   return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <TransactionProvider>{children}</TransactionProvider>
+    </QueryClientProvider>
   );
 };
 

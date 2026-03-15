@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount, useSwitchChain } from "wagmi";
 import { sepolia, mainnet } from "wagmi/chains";
-import { Button } from "@/components/ui";
+import { Button } from "@/components/ui/Button";
+import { TransactionHistoryModal } from "@/components/ui/TransactionHistoryModal";
 
 /**
  * Navbar component with wallet connection and network switching
@@ -9,6 +11,7 @@ import { Button } from "@/components/ui";
 export const Navbar = () => {
   const { chain } = useAccount();
   const { switchChain } = useSwitchChain();
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   // Check if user is on wrong network (neither sepolia nor mainnet)
   const isWrongNetwork = chain?.id !== sepolia.id && chain?.id !== mainnet.id;
@@ -39,9 +42,23 @@ export const Navbar = () => {
           </Button>
         )}
 
+        {/* Transaction History Toggle */}
+        <button
+          onClick={() => setIsHistoryOpen(true)}
+          className="p-2 w-10 h-10 rounded-full bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors flex items-center justify-center shadow-sm"
+          title="Recent Transactions"
+        >
+          📜
+        </button>
+
         {/* Wallet Connect Button */}
         <ConnectButton showBalance={false} chainStatus="full" />
       </div>
+
+      <TransactionHistoryModal 
+        isOpen={isHistoryOpen} 
+        onClose={() => setIsHistoryOpen(false)} 
+      />
     </nav>
   );
 };
