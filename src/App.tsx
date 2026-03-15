@@ -7,7 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { SwapInterface } from "@/components/features/SwapInterface";
 import { LiquidityProvider } from "@/components/features/LiquidityProvider";
 import { YieldFarmDashboard } from "@/components/features/YieldFarmDashboard";
-import { CONTRACT_ADDRESSES } from "@/config/contracts";
+import { useNetworkConfig } from "@/hooks";
 
 type Tab = "swap" | "pool" | "farm";
 
@@ -23,13 +23,12 @@ const TABS: TabConfig[] = [
   { id: "farm", label: "Farm", icon: "🌾" },
 ];
 
-const contracts = CONTRACT_ADDRESSES.sepolia;
-
 /**
  * Main dashboard content with tab navigation
  */
 const DashboardContent = () => {
   const [activeTab, setActiveTab] = useState<Tab>("swap");
+  const { contracts } = useNetworkConfig();
 
   const renderContent = () => {
     switch (activeTab) {

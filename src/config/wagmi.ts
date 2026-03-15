@@ -1,12 +1,13 @@
 import { http, createConfig } from "wagmi";
-import { sepolia } from "wagmi/chains";
+import { sepolia, mainnet } from "wagmi/chains";
 import { metaMask } from "wagmi/connectors";
 
 // Configure Wagmi with supported chains and connectors
 export const config = createConfig({
-  chains: [sepolia],
+  chains: [sepolia, mainnet],
   transports: {
     [sepolia.id]: http(),
+    [mainnet.id]: http(),
   },
   connectors: [
     // MetaMask connector with better UX

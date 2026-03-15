@@ -1,6 +1,6 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount, useSwitchChain } from "wagmi";
-import { sepolia } from "wagmi/chains";
+import { sepolia, mainnet } from "wagmi/chains";
 import { Button } from "@/components/ui";
 
 /**
@@ -10,8 +10,8 @@ export const Navbar = () => {
   const { chain } = useAccount();
   const { switchChain } = useSwitchChain();
 
-  // Check if user is on wrong network
-  const isWrongNetwork = chain?.id !== sepolia.id;
+  // Check if user is on wrong network (neither sepolia nor mainnet)
+  const isWrongNetwork = chain?.id !== sepolia.id && chain?.id !== mainnet.id;
 
   return (
     <nav className="flex justify-between items-center p-4 border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-50">
@@ -35,7 +35,7 @@ export const Navbar = () => {
             size="sm"
             onClick={() => switchChain({ chainId: sepolia.id })}
           >
-            Switch to Sepolia
+            Switch Network
           </Button>
         )}
 
