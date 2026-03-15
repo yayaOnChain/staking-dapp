@@ -1,15 +1,17 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { formatEther, type Address } from "viem";
 import { toast } from "sonner";
 import { TransactionMonitor } from "@/components/web3/TransactionToast";
 import { useLiquidity } from "@/hooks";
+import { useSettings } from "@/providers/SettingsProvider";
 import {
   Card,
   Button,
   Input,
   StatBox,
-} from "../../components/ui";
+  SettingsModal,
+} from "@/components/ui";
 import { cn } from "@/lib/utils";
 
 interface LiquidityProviderProps {
@@ -28,6 +30,8 @@ export const LiquidityProvider = ({
   token1Address,
 }: LiquidityProviderProps) => {
   const { address } = useAccount();
+  const { slippageTolerance } = useSettings();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const {
     mode,
@@ -101,8 +105,23 @@ export const LiquidityProvider = ({
   }
 
   return (
-    <Card padding="lg" className="max-w-lg mx-auto">
-      <h2 className="text-2xl font-bold text-white mb-6">Liquidity Pool</h2>
+    <Card padding="lg" className="max-w-lg mx-auto relative">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-white">Liquidity Pool</h2>
+        <div className="relative">
+          <button
+            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            title="Transaction Settings"
+          >
+            ⚙️
+          </button>
+          <SettingsModal 
+            isOpen={isSettingsOpen} 
+            onClose={() => setIsSettingsOpen(false)} 
+          />
+        </div>
+      </div>
 
       {hash && <TransactionMonitor hash={hash} />}
 
@@ -171,9 +190,17 @@ export const LiquidityProvider = ({
 
           {/* Expected LP Tokens */}
           {amount0 && amount1 && (
-            <div className="p-4 bg-blue-900/30 rounded-lg border border-blue-700">
-              <p className="text-sm text-blue-400">Expected LP Tokens</p>
-              <p className="text-2xl font-mono text-white">{expectedLP}</p>
+            <div className="p-4 bg-gray-900/50 rounded-lg text-sm text-gray-400 space-y-2">
+              <div className="flex justify-between">
+                <span>Expected LP Tokens</span>
+                <span className="text-white font-medium">{expectedLP} LP</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span>Minimum Expected (after {slippageTolerance}% slippage)</span>
+                <span className="text-gray-300">
+                  {expectedLP ? (Number(expectedLP) * ((100 - slippageTolerance) / 100)).toFixed(6) : "0"} LP
+                </span>
+              </div>
             </div>
           )}
         </div>

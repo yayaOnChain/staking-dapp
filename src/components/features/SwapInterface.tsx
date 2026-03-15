@@ -1,15 +1,17 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useWaitForTransactionReceipt } from "wagmi";
 import { formatEther, type Address } from "viem";
 import { toast } from "sonner";
 import { TransactionMonitor } from "@/components/web3/TransactionToast";
 import { useSwap } from "@/hooks";
+import { useSettings } from "@/providers/SettingsProvider";
 import {
   Card,
   Button,
   Input,
   TokenSelectButton,
-} from "../../components/ui";
+  SettingsModal,
+} from "@/components/ui";
 
 interface SwapInterfaceProps {
   poolAddress: Address;
@@ -27,7 +29,10 @@ export const SwapInterface = ({
   token1Address,
 }: SwapInterfaceProps) => {
   const { address } = useAccount();
+  const { slippageTolerance } = useSettings();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+  // We will pass slippageTolerance later to useSwap, but for now we calculate visually
   const {
     amountIn,
     setAmountIn,
@@ -89,6 +94,10 @@ export const SwapInterface = ({
   const currentTokenSymbol = tokenIn === "token0" ? "TOKEN0" : "TOKEN1";
   const outputTokenSymbol = tokenIn === "token0" ? "TOKEN1" : "TOKEN0";
 
+  // Calculate minimum received
+  const expectedOutputNum = Number(estimatedOutput) || 0;
+  const minimumReceived = expectedOutputNum * ((100 - slippageTolerance) / 100);
+
   if (!address) {
     return (
       <Card padding="lg" className="max-w-md mx-auto text-center">
@@ -98,8 +107,23 @@ export const SwapInterface = ({
   }
 
   return (
-    <Card padding="lg" className="max-w-md mx-auto">
-      <h2 className="text-2xl font-bold text-white mb-6">Swap Tokens</h2>
+    <Card padding="lg" className="max-w-md mx-auto relative">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-white">Swap Tokens</h2>
+        <div className="relative">
+          <button
+            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            title="Transaction Settings"
+          >
+            ⚙️
+          </button>
+          <SettingsModal 
+            isOpen={isSettingsOpen} 
+            onClose={() => setIsSettingsOpen(false)} 
+          />
+        </div>
+      </div>
 
       {hash && <TransactionMonitor hash={hash} />}
 
@@ -133,7 +157,7 @@ export const SwapInterface = ({
 
         {/* Arrow Divider */}
         <div className="flex justify-center">
-          <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center">
+          <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center -my-2 relative z-10">
             <span className="text-gray-400">↓</span>
           </div>
         </div>
@@ -165,8 +189,14 @@ export const SwapInterface = ({
       {amountIn && (
         <div className="mt-4 p-3 bg-gray-900/50 rounded-lg text-sm text-gray-400">
           <div className="flex justify-between">
-            <span>Price Impact</span>
-            <span>&lt; 1%</span>
+            <span>Minimum Received</span>
+            <span className="text-white font-medium">
+              {minimumReceived.toFixed(6)} {outputTokenSymbol}
+            </span>
+          </div>
+          <div className="flex justify-between mt-1">
+            <span>Slippage Tolerance</span>
+            <span>{slippageTolerance}%</span>
           </div>
           <div className="flex justify-between mt-1">
             <span>Network Fee</span>

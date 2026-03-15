@@ -41,12 +41,16 @@ vi.mock('wagmi', () => ({
   })),
 }));
 
+import { SettingsProvider } from "@/providers/SettingsProvider";
+
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
   });
   return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <SettingsProvider>{children}</SettingsProvider>
+    </QueryClientProvider>
   );
 };
 
