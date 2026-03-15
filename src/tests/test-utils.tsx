@@ -1,37 +1,9 @@
 import { render, type RenderOptions } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
 import type { ReactElement, ReactNode } from 'react';
 import { vi } from 'vitest';
 
-// Mock QueryClient for tests
-const createTestQueryClient = () => {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-        gcTime: Infinity,
-      },
-      mutations: {
-        retry: false,
-      },
-    },
-  });
-};
-
-// Test providers wrapper
-interface TestProvidersProps {
-  children: ReactNode;
-}
-
-export const TestProviders = ({ children }: TestProvidersProps) => {
-  const queryClient = createTestQueryClient();
-  
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  );
-};
+import { TestProviders } from './test-providers';
 
 // Custom render function with test providers
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {
@@ -125,7 +97,7 @@ export type MockHookReturn<T> = T & {
 };
 
 // Create mock hook return value
-export function createMockHookReturn<T extends Record<string, any>>(
+export function createMockHookReturn<T extends Record<string, unknown>>(
   baseValues: T
 ): MockHookReturn<T> {
   const mockValues = { ...baseValues };
