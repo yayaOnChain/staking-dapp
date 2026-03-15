@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Toaster } from "sonner";
-import { AppProviders } from "./providers/AppProviders";
-import { ErrorBoundary } from "./components/ui";
-import { Navbar } from "./components/layout/Navbar";
-import { Footer } from "./components/layout/Footer";
-import { SwapInterface } from "./components/features/SwapInterface";
-import { LiquidityProvider } from "./components/features/LiquidityProvider";
-import { YieldFarmDashboard } from "./components/features/YieldFarmDashboard";
-import { CONTRACT_ADDRESSES } from "./config/contracts";
+import { AppProviders } from "@/providers/AppProviders";
+import { ErrorBoundary } from "@/components/ui";
+import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
+import { SwapInterface } from "@/components/features/SwapInterface";
+import { LiquidityProvider } from "@/components/features/LiquidityProvider";
+import { YieldFarmDashboard } from "@/components/features/YieldFarmDashboard";
+import { CONTRACT_ADDRESSES } from "@/config/contracts";
 
 type Tab = "swap" | "pool" | "farm";
 

@@ -3,7 +3,7 @@ import { render, type RenderOptions } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 import { vi } from 'vitest';
 
-import { TestProviders } from './test-providers';
+import { TestProviders } from "@/tests/test-providers";
 
 // Custom render function with test providers
 interface CustomRenderOptions extends Omit<RenderOptions, 'wrapper'> {

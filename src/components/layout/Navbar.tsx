@@ -1,7 +1,7 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount, useSwitchChain } from "wagmi";
 import { sepolia } from "wagmi/chains";
-import { Button } from "../ui";
+import { Button } from "@/components/ui";
 
 /**
  * Navbar component with wallet connection and network switching

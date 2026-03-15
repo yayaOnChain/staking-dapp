@@ -4,8 +4,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { mockAddresses } from '../../tests/test-utils';
-import { useApproval } from '../../hooks/useApproval';
+import { mockAddresses } from "@/tests/test-utils";
+import { useApproval } from "@/hooks/useApproval";
 
 const createWrapper = () => {
   const queryClient = new QueryClient({

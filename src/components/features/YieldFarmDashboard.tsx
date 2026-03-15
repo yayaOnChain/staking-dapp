@@ -2,8 +2,8 @@ import { useEffect } from "react";
 import { useAccount } from "wagmi";
 import { formatEther, parseEther, type Address } from "viem";
 import { toast } from "sonner";
-import { TransactionMonitor } from "../web3/TransactionToast";
-import { useYieldFarm } from "../../hooks";
+import { TransactionMonitor } from "@/components/web3/TransactionToast";
+import { useYieldFarm } from "@/hooks";
 import {
   Card,
   Button,

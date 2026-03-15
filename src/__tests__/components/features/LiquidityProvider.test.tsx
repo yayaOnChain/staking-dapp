@@ -4,8 +4,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { LiquidityProvider } from '../../../components/features/LiquidityProvider';
-import { mockAddresses } from '../../../tests/test-utils';
+import { LiquidityProvider } from "@/components/features/LiquidityProvider";
+import { mockAddresses } from "@/tests/test-utils";
 
 vi.mock('../../../hooks/useLiquidity', () => ({
   useLiquidity: vi.fn(() => ({

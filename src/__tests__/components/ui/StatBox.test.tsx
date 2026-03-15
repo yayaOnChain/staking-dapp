@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { StatBox } from '../../../components/ui/StatBox';
+import { StatBox } from "@/components/ui/StatBox";
 
 describe('StatBox', () => {
   describe('rendering', () => {

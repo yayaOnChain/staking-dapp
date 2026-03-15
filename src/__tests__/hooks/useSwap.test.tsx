@@ -4,8 +4,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { mockAddresses } from '../../tests/test-utils';
-import { useSwap } from '../../hooks/useSwap';
+import { mockAddresses } from "@/tests/test-utils";
+import { useSwap } from "@/hooks/useSwap";
 
 const createWrapper = () => {
   const queryClient = new QueryClient({

@@ -1,6 +1,6 @@
 import { WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { config } from "../config/wagmi";
+import { config } from "@/config/wagmi";
 import { darkTheme, RainbowKitProvider } from "@rainbow-me/rainbowkit";
 
 /**

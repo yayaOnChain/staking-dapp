@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { Input } from '../../../components/ui/Input';
+import { Input } from "@/components/ui/Input";
 
 describe('Input', () => {
   describe('rendering', () => {

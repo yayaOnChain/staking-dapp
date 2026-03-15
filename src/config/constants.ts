@@ -1,5 +1,5 @@
 import type { Address } from "viem";
-import type { ContractAddresses, Network } from "../types";
+import type { ContractAddresses, Network } from "@/types";
 
 /**
  * Contract addresses by network

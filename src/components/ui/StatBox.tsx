@@ -1,5 +1,5 @@
 import { type HTMLAttributes, forwardRef } from "react";
-import { cn } from "../../lib/utils";
+import { cn } from "@/lib/utils";
 
 interface StatBoxProps extends HTMLAttributes<HTMLDivElement> {
   label: string;

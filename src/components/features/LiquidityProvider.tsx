@@ -2,15 +2,15 @@ import { useEffect } from "react";
 import { useAccount } from "wagmi";
 import { formatEther, type Address } from "viem";
 import { toast } from "sonner";
-import { TransactionMonitor } from "../web3/TransactionToast";
-import { useLiquidity } from "../../hooks";
+import { TransactionMonitor } from "@/components/web3/TransactionToast";
+import { useLiquidity } from "@/hooks";
 import {
   Card,
   Button,
   Input,
   StatBox,
 } from "../../components/ui";
-import { cn } from "../../lib/utils";
+import { cn } from "@/lib/utils";
 
 interface LiquidityProviderProps {
   poolAddress: Address;

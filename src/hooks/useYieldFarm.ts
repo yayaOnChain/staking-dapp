@@ -3,8 +3,8 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { useQueryClient } from "@tanstack/react-query";
 import { parseEther, formatEther, type Address } from "viem";
 import { toast } from "sonner";
-import { YIELD_FARM_ABI, ERC20_ABI } from "../abis";
-import { useApproval } from "./useApproval";
+import { YIELD_FARM_ABI, ERC20_ABI } from "@/abis";
+import { useApproval } from "@/hooks/useApproval";
 
 interface UseYieldFarmParams {
   farmAddress: Address;

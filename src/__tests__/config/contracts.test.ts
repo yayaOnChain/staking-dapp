@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CONTRACT_ADDRESSES, getContractAddress } from '../../config/contracts';
+import { CONTRACT_ADDRESSES, getContractAddress } from "@/config/contracts";
 
 describe('contracts config', () => {
   describe('CONTRACT_ADDRESSES re-export', () => {

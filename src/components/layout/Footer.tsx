@@ -1,5 +1,5 @@
-import { Card } from "../ui";
-import { CONTRACT_ADDRESSES, NETWORK_CONFIG, DEFAULT_NETWORK } from "../../config/constants";
+import { Card } from "@/components/ui";
+import { CONTRACT_ADDRESSES, NETWORK_CONFIG, DEFAULT_NETWORK } from "@/config/constants";
 
 interface SocialLink {
   label: string;

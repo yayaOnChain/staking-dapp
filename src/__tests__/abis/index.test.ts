@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { LIQUIDITY_POOL_ABI, YIELD_FARM_ABI, ERC20_ABI } from '../../abis/index';
+import { LIQUIDITY_POOL_ABI, YIELD_FARM_ABI, ERC20_ABI } from "@/abis/index";
 
 describe('ABIs', () => {
   describe('LIQUIDITY_POOL_ABI', () => {

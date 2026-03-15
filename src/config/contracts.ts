@@ -1,2 +1,2 @@
 // Re-export from constants for backward compatibility
-export { CONTRACT_ADDRESSES, getContractAddress } from "./constants";
+export { CONTRACT_ADDRESSES, getContractAddress } from "@/config/constants";

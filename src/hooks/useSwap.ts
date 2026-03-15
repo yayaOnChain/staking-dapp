@@ -3,9 +3,9 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { useQueryClient } from "@tanstack/react-query";
 import { parseEther, formatEther, type Address } from "viem";
 import { toast } from "sonner";
-import { LIQUIDITY_POOL_ABI, ERC20_ABI } from "../abis";
-import { useApproval } from "./useApproval";
-import type { SwapMode } from "../types";
+import { LIQUIDITY_POOL_ABI, ERC20_ABI } from "@/abis";
+import { useApproval } from "@/hooks/useApproval";
+import type { SwapMode } from "@/types";
 
 interface UseSwapParams {
   poolAddress: Address;

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useReadContract, useWriteContract } from "wagmi";
 import type { Address } from "viem";
-import { ERC20_ABI } from "../abis";
+import { ERC20_ABI } from "@/abis";
 
 interface UseApprovalParams {
   tokenAddress: Address;

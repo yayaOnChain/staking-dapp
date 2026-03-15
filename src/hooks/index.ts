@@ -1,4 +1,4 @@
-export { useApproval } from "./useApproval";
-export { useSwap } from "./useSwap";
-export { useLiquidity } from "./useLiquidity";
-export { useYieldFarm } from "./useYieldFarm";
+export { useApproval } from "@/hooks/useApproval";
+export { useSwap } from "@/hooks/useSwap";
+export { useLiquidity } from "@/hooks/useLiquidity";
+export { useYieldFarm } from "@/hooks/useYieldFarm";
