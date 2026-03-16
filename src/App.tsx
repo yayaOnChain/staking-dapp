@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Toaster } from "sonner";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { AppProviders } from "@/providers/AppProviders";
 import { ErrorBoundary } from "@/components/ui";
 import { Navbar } from "@/components/layout/Navbar";
@@ -23,6 +24,13 @@ const TABS: TabConfig[] = [
   { id: "farm", label: "Farm", icon: "🌾" },
 ];
 
+// Reusable animation variants for page transitions
+const pageVariants: Variants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.2, ease: "easeIn" } }
+};
+
 /**
  * Main dashboard content with tab navigation
  */
@@ -34,27 +42,51 @@ const DashboardContent = () => {
     switch (activeTab) {
       case "swap":
         return (
-          <SwapInterface
-            poolAddress={contracts.POOL}
-            token0Address={contracts.TOKEN_A}
-            token1Address={contracts.TOKEN_B}
-          />
+          <motion.div 
+            key="swap"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <SwapInterface
+              poolAddress={contracts.POOL}
+              token0Address={contracts.TOKEN_A}
+              token1Address={contracts.TOKEN_B}
+            />
+          </motion.div>
         );
       case "pool":
         return (
-          <LiquidityProvider
-            poolAddress={contracts.POOL}
-            token0Address={contracts.TOKEN_A}
-            token1Address={contracts.TOKEN_B}
-          />
+          <motion.div 
+            key="pool"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <LiquidityProvider
+              poolAddress={contracts.POOL}
+              token0Address={contracts.TOKEN_A}
+              token1Address={contracts.TOKEN_B}
+            />
+          </motion.div>
         );
       case "farm":
         return (
-          <YieldFarmDashboard
-            farmAddress={contracts.FARM}
-            lpTokenAddress={contracts.POOL}
-            rewardTokenAddress={contracts.REWARD_TOKEN}
-          />
+          <motion.div 
+            key="farm"
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <YieldFarmDashboard
+              farmAddress={contracts.FARM}
+              lpTokenAddress={contracts.POOL}
+              rewardTokenAddress={contracts.REWARD_TOKEN}
+            />
+          </motion.div>
         );
       default:
         return null;
@@ -67,19 +99,26 @@ const DashboardContent = () => {
 
       {/* Tab Navigation */}
       <div className="flex justify-center mt-8 mb-6 px-4">
-        <div className="bg-gray-800 p-1 rounded-xl inline-flex shadow-lg">
+        <div className="bg-gray-800 p-1 rounded-xl inline-flex shadow-lg relative">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-6 py-3 rounded-lg capitalize font-medium transition-all ${
+              className={`relative px-6 py-3 rounded-lg capitalize font-medium transition-colors z-10 ${
                 activeTab === tab.id
-                  ? "bg-linear-to-r from-blue-600 to-purple-600 text-white shadow-lg"
-                  : "text-gray-400 hover:text-white hover:bg-gray-700"
+                  ? "text-white"
+                  : "text-gray-400 hover:text-white hover:bg-gray-700/50"
               }`}
             >
-              <span className="mr-2">{tab.icon}</span>
-              {tab.label}
+              {activeTab === tab.id && (
+                <motion.div
+                  layoutId="activeTabIndicator"
+                  className="absolute inset-0 bg-linear-to-r from-blue-600 to-purple-600 rounded-lg -z-10 shadow-lg"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="mr-2 relative z-10">{tab.icon}</span>
+              <span className="relative z-10">{tab.label}</span>
             </button>
           ))}
         </div>
@@ -87,7 +126,9 @@ const DashboardContent = () => {
 
       {/* Feature Content */}
       <main className="flex-1 max-w-6xl mx-auto p-4 w-full">
-        {renderContent()}
+        <AnimatePresence mode="wait">
+          {renderContent()}
+        </AnimatePresence>
       </main>
 
       <Footer />
