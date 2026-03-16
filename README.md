@@ -14,8 +14,9 @@ A modern, feature-rich **Decentralized Finance (DeFi)** application built on Eth
 ### 🔄 Token Swap
 - Swap between ERC20 tokens directly from the interface
 - Real-time price calculation using constant product formula (x * y = k)
+- ⚙️ **Customizable Slippage Tolerance** to protect against front-running
 - 0.3% swap fee integrated into pricing
-- Transaction status tracking with toast notifications
+- 📜 **Activity Feed** tracking with persistent local storage
 - Gas estimation and confirmation states
 
 ### 💧 Liquidity Provision
@@ -32,6 +33,11 @@ A modern, feature-rich **Decentralized Finance (DeFi)** application built on Eth
 - Track staked amounts and pending rewards
 - Real-time APY and farm statistics
 
+### 🌐 Multi-Network & UI Polish
+- **Dynamic Network Support:** Seamlessly switch between Ethereum Mainnet and Sepolia Testnet.
+- **Premium Fluid UI:** Powered by Framer Motion, featuring layout transitions, interactive tab-indicators, and tactile button micro-interactions.
+- **Path Aliasing:** Clean structural imports using `@/*`.
+
 ---
 
 ## 🛠️ Tech Stack
@@ -41,6 +47,7 @@ A modern, feature-rich **Decentralized Finance (DeFi)** application built on Eth
 | **Frontend** | React 19.2, TypeScript |
 | **Build Tool** | Vite 7.3 |
 | **Styling** | Tailwind CSS 4.2 |
+| **Animation**| Framer Motion 12 |
 | **Web3** | wagmi 2.19, viem 2.46 |
 | **Wallet** | Rainbow Kit 2.2 |
 | **State** | TanStack Query 5.90 |
@@ -163,9 +170,10 @@ Click "Connect Wallet" in the top-right corner and select your Web3 wallet.
 
 ### 2. Swap Tokens
 1. Navigate to the **Swap** tab
-2. Enter the amount you want to swap
-3. Click **Approve** to allow token spending (first time only)
-4. Click **Swap** and confirm in your wallet
+2. *(Optional)* Click the ⚙️ icon to adjust your **Slippage Tolerance**
+3. Enter the amount you want to swap
+4. Click **Approve** to allow token spending (first time only)
+5. Click **Swap** and confirm in your wallet
 
 ### 3. Provide Liquidity
 1. Navigate to the **Liquidity** tab
@@ -180,6 +188,11 @@ Click "Connect Wallet" in the top-right corner and select your Web3 wallet.
 3. Click **Approve** to allow farm to use LP tokens
 4. Click **Deposit** to start earning rewards
 5. Click **Harvest** anytime to claim rewards
+
+### 5. View Activity
+1. Click the 📜 icon in the Navbar to open the **Transaction History**
+2. View real-time pending, success, and failed statuses
+3. Click "View on Explorer" to verify transactions on-chain
 
 ---
 
@@ -203,7 +216,7 @@ Click "Connect Wallet" in the top-right corner and select your Web3 wallet.
 | Network | Chain ID | Status |
 |---------|----------|--------|
 | Sepolia | 11155111 | ✅ Active |
-| Ethereum Mainnet | 1 | 🔜 Coming Soon |
+| Ethereum Mainnet | 1 | ✅ Active (*Dynamically connects via Wagmi*) |
 
 ---
 
