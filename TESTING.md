@@ -138,11 +138,12 @@ The following external dependencies are mocked in `src/tests/setup-tests.tsx`:
 
 ### Custom Mocks
 
-Located in `src/tests/setup-tests.tsx`:
+Located in `src/tests/setup-tests.tsx` and `test-providers.tsx`:
 - Wallet connection state
 - Contract read/write operations
 - Transaction receipts
 - Toast notifications
+- **GLOBAL STATE**: Mocked `SettingsProvider` and `TransactionProvider` wrap all React testing environments to prevent isolated hook Context failures.
 
 ## Test Utilities
 
