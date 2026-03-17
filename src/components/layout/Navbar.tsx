@@ -21,7 +21,7 @@ export const Navbar = () => {
       {/* Logo & Brand */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 bg-linear-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-          <span className="text-white font-bold text-xl">D</span>
+          <span className="text-white font-bold text-xl">SD</span>
         </div>
         <div>
           <h1 className="text-xl font-bold text-white">Staking DApp</h1>
