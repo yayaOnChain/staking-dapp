@@ -4,7 +4,7 @@ import { useAccount, useSwitchChain } from "wagmi";
 import { sepolia, mainnet } from "wagmi/chains";
 import { Button } from "@/components/ui/Button";
 import { TransactionHistoryModal } from "@/components/ui/TransactionHistoryModal";
-
+import { motion, AnimatePresence } from "framer-motion";
 /**
  * Navbar component with wallet connection and network switching
  */
@@ -30,32 +30,57 @@ export const Navbar = () => {
       </div>
 
       {/* Right Side Actions */}
-      <div className="flex items-center gap-4">
-        {/* Network Warning */}
-        {isWrongNetwork && (
-          <Button
-            variant="danger"
-            size="sm"
-            onClick={() => switchChain({ chainId: sepolia.id })}
-          >
-            Switch Network
-          </Button>
-        )}
+      <motion.div 
+        className="flex items-center justify-end gap-3 min-h-[40px]"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        layout
+      >
+        <AnimatePresence mode="popLayout">
+          {/* Network Warning */}
+          {isWrongNetwork && (
+            <motion.div
+              key="network-warning"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+              layout
+            >
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => switchChain({ chainId: sepolia.id })}
+              >
+                Switch Network
+              </Button>
+            </motion.div>
+          )}
 
-        {/* Transaction History Toggle */}
-        {isConnected && (
-          <button
-            onClick={() => setIsHistoryOpen(true)}
-            className="p-2 w-10 h-10 rounded-full bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors flex items-center justify-center shadow-sm"
-            title="Recent Transactions"
-          >
-            📜
-          </button>
-        )}
+          {/* Transaction History Toggle */}
+          {isConnected && (
+            <motion.button
+              key="tx-history"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setIsHistoryOpen(true)}
+              className="p-2 w-10 h-10 rounded-full bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors flex items-center justify-center shadow-sm"
+              title="Recent Transactions"
+              layout
+            >
+              📜
+            </motion.button>
+          )}
+        </AnimatePresence>
 
         {/* Wallet Connect Button */}
-        <ConnectButton showBalance={false} chainStatus="full" />
-      </div>
+        <motion.div layout>
+          <ConnectButton showBalance={false} chainStatus="full" />
+        </motion.div>
+      </motion.div>
 
       <TransactionHistoryModal 
         isOpen={isHistoryOpen} 
