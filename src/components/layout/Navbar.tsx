@@ -9,7 +9,7 @@ import { TransactionHistoryModal } from "@/components/ui/TransactionHistoryModal
  * Navbar component with wallet connection and network switching
  */
 export const Navbar = () => {
-  const { chain } = useAccount();
+  const { chain, isConnected } = useAccount();
   const { switchChain } = useSwitchChain();
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
@@ -43,13 +43,15 @@ export const Navbar = () => {
         )}
 
         {/* Transaction History Toggle */}
-        <button
-          onClick={() => setIsHistoryOpen(true)}
-          className="p-2 w-10 h-10 rounded-full bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors flex items-center justify-center shadow-sm"
-          title="Recent Transactions"
-        >
-          📜
-        </button>
+        {isConnected && (
+          <button
+            onClick={() => setIsHistoryOpen(true)}
+            className="p-2 w-10 h-10 rounded-full bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700 transition-colors flex items-center justify-center shadow-sm"
+            title="Recent Transactions"
+          >
+            📜
+          </button>
+        )}
 
         {/* Wallet Connect Button */}
         <ConnectButton showBalance={false} chainStatus="full" />
