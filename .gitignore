@@ -27,3 +27,8 @@ dist-ssr
 .env
 .env.development
 .env.production
+
+# Hardhat
+artifacts
+typechain-types
+cache
