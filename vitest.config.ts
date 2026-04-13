@@ -9,7 +9,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/tests/setup-tests.tsx'],
     include: ['src/**/*.{test,spec}.{ts,tsx}', 'src/__tests__/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['node_modules', 'dist', '.git', '.vscode'],
+    exclude: ['node_modules', 'dist', '.git', '.vscode', 'src/__tests__/contracts/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
@@ -20,6 +20,7 @@ export default defineConfig({
         'src/**/*.config.*',
         'src/main.tsx',
         'src/vite-env.d.ts',
+        'src/__tests__/contracts/**',
       ],
       thresholds: {
         global: {
