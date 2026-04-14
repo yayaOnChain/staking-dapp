@@ -5,6 +5,9 @@ import "@nomicfoundation/hardhat-verify";
 import "@typechain/hardhat";
 import * as dotenv from "dotenv";
 
+// Load sensitive variables (.env.hardhat - private keys, API keys)
+dotenv.config({ path: '.env.hardhat' });
+// Load public variables (.env - contract addresses)
 dotenv.config();
 
 const config: HardhatUserConfig = {

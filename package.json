@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "clean": "npx hardhat clean",
-    "clean:types": "find . -name '*.d.ts' -not -path '*/node_modules/*' -not -path '*/typechain-types/*' -type f -delete",
+    "clean:types": "find . -name '*.d.ts' -not -path '*/node_modules/*' -not -path '*/typechain-types/*' -not -name 'vite-env*' -type f -delete",
     "compile": "npx hardhat compile",
     "deploy:local": "npx hardhat run src/scripts/deploy.ts --network localhost",
     "deploy:sepolia": "npx hardhat run src/scripts/deploy.ts --network sepolia",
