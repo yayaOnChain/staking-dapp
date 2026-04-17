@@ -1,5 +1,7 @@
-import { ethers } from "hardhat";
-import fs from "fs";
+/// <reference types="@nomicfoundation/hardhat-ethers" />
+import { ethers, network } from "hardhat";
+import * as fs from "fs";
+import * as path from "path";
 
 async function main() {
   console.log("🚀 Starting deployment...\n");
@@ -65,12 +67,21 @@ async function main() {
   console.log("=".repeat(50));
   console.log(JSON.stringify(addresses, null, 2));
 
+  // Determine network and save to appropriate file
+  const networkName = network.name;
+  const filename = networkName === "localhost"
+    ? "contract-addresses-local.json"
+    : networkName === "sepolia"
+      ? "contract-addresses-sepolia.json"
+      : `contract-addresses-${networkName}.json`;
+
   // 7. Save to file
+  const contractAddressPath = path.join(__dirname, `../../${filename}`);
   fs.writeFileSync(
-    "./contract-addresses.json",
+    contractAddressPath,
     JSON.stringify(addresses, null, 2)
   );
-  console.log("\n💾 Addresses saved to contract-addresses.json");
+  console.log(`\n💾 Addresses saved to ${filename}`);
 
   // 8. Instructions for frontend
   console.log("\n" + "=".repeat(50));
