@@ -53,7 +53,8 @@ contract LiquidityPool is ERC20, ReentrancyGuard {
      */
     function addLiquidity(
         uint256 amount0,
-        uint256 amount1
+        uint256 amount1,
+        uint256 minLPTokens
     ) external nonReentrant returns (uint256 lpTokens) {
         require(amount0 > 0 && amount1 > 0, "Invalid amounts");
 
@@ -63,6 +64,7 @@ contract LiquidityPool is ERC20, ReentrancyGuard {
             // Mint sqrt(amount0 * amount1) to avoid huge inflation on first deposit
             lpTokens = sqrt(amount0 * amount1);
             require(lpTokens > 0, "Insufficient liquidity minted");
+            require(lpTokens >= minLPTokens, "Slippage limit: insufficient LP minted");
             // Lock the first LP tokens to address(0) or mint to user (Simplified: mint to user)
             _mint(msg.sender, lpTokens);
         } else {
@@ -72,6 +74,7 @@ contract LiquidityPool is ERC20, ReentrancyGuard {
             lpTokens = liquidity0 < liquidity1 ? liquidity0 : liquidity1;
 
             require(lpTokens > 0, "Insufficient liquidity minted");
+            require(lpTokens >= minLPTokens, "Slippage limit: insufficient LP minted");
             _mint(msg.sender, lpTokens);
         }
 
@@ -93,7 +96,9 @@ contract LiquidityPool is ERC20, ReentrancyGuard {
      * @return amount1 Amount of token1 returned
      */
     function removeLiquidity(
-        uint256 lpTokens
+        uint256 lpTokens,
+        uint256 minAmount0,
+        uint256 minAmount1
     ) external nonReentrant returns (uint256 amount0, uint256 amount1) {
         require(lpTokens > 0, "Invalid amount");
         require(balanceOf(msg.sender) >= lpTokens, "Insufficient balance");
@@ -103,6 +108,7 @@ contract LiquidityPool is ERC20, ReentrancyGuard {
         amount1 = (lpTokens * reserve1) / totalSupply();
 
         require(amount0 > 0 && amount1 > 0, "Insufficient amounts");
+        require(amount0 >= minAmount0 && amount1 >= minAmount1, "Slippage limit: returned amount too low");
 
         // Burn LP tokens
         _burn(msg.sender, lpTokens);
@@ -126,6 +132,7 @@ contract LiquidityPool is ERC20, ReentrancyGuard {
      */
     function swap(
         uint256 amountIn,
+        uint256 minAmountOut,
         address tokenIn
     ) external nonReentrant returns (uint256 amountOut) {
         require(amountIn > 0, "Insufficient input amount");
@@ -152,6 +159,7 @@ contract LiquidityPool is ERC20, ReentrancyGuard {
         amountOut = numerator / denominator;
 
         require(amountOut > 0, "Insufficient output amount");
+        require(amountOut >= minAmountOut, "Slippage limit: received less than expected");
         require(amountOut < reserveOut, "Insufficient liquidity");
 
         // Update reserves (Checks-Effects-Interactions pattern)
