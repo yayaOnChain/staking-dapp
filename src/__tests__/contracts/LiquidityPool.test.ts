@@ -57,7 +57,8 @@ describe("LiquidityPool", function () {
 
       const tx = await liquidityPool.addLiquidity(
         INITIAL_AMOUNT_A,
-        INITIAL_AMOUNT_B
+        INITIAL_AMOUNT_B,
+        0
       );
       // const receipt = await tx.wait();
       await tx.wait();
@@ -75,7 +76,7 @@ describe("LiquidityPool", function () {
       await tokenA.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_A);
       await tokenB.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_B);
 
-      const tx = await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B);
+      const tx = await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B, 0);
       const receipt = await tx.wait();
       const event = receipt?.logs.find((log: Log) => {
         try {
@@ -97,7 +98,7 @@ describe("LiquidityPool", function () {
       // Initial deposit
       await tokenA.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_A);
       await tokenB.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_B);
-      await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B);
+      await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B, 0);
 
       // Second deposit
       const secondAmountA = ethers.parseEther("500");
@@ -105,7 +106,7 @@ describe("LiquidityPool", function () {
       await tokenA.approve(await liquidityPool.getAddress(), secondAmountA);
       await tokenB.approve(await liquidityPool.getAddress(), secondAmountB);
 
-      await liquidityPool.addLiquidity(secondAmountA, secondAmountB);
+      await liquidityPool.addLiquidity(secondAmountA, secondAmountB, 0);
 
       expect(await liquidityPool.reserve0()).to.equal(
         INITIAL_AMOUNT_A + secondAmountA
@@ -120,13 +121,13 @@ describe("LiquidityPool", function () {
       await tokenB.approve(await liquidityPool.getAddress(), 0);
 
       await expect(
-        liquidityPool.addLiquidity(0, 0)
+        liquidityPool.addLiquidity(0, 0, 0)
       ).to.be.revertedWith("Invalid amounts");
     });
 
     it("Should fail if user hasn't approved token transfers", async function () {
       await expect(
-        liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B)
+        liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B, 0)
       ).to.be.reverted;
     });
 
@@ -134,7 +135,7 @@ describe("LiquidityPool", function () {
       // Initial deposit by owner
       await tokenA.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_A);
       await tokenB.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_B);
-      await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B);
+      await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B, 0);
 
       // const ownerLPBalanceBefore = await liquidityPool.balanceOf(owner.address);
       await liquidityPool.balanceOf(owner.address);
@@ -148,7 +149,8 @@ describe("LiquidityPool", function () {
 
       await liquidityPool.connect(user1).addLiquidity(
         ethers.parseEther("500"),
-        ethers.parseEther("500")
+        ethers.parseEther("500"),
+        0
       );
 
       // User1 should receive LP tokens proportional to their deposit
@@ -161,7 +163,7 @@ describe("LiquidityPool", function () {
     beforeEach(async function () {
       await tokenA.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_A);
       await tokenB.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_B);
-      await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B);
+      await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B, 0);
     });
 
     it("Should allow removing liquidity", async function () {
@@ -170,7 +172,7 @@ describe("LiquidityPool", function () {
       const tokenABalanceBefore = await tokenA.balanceOf(owner.address);
       const tokenBBalanceBefore = await tokenB.balanceOf(owner.address);
 
-      await liquidityPool.removeLiquidity(lpTokensToRemove);
+      await liquidityPool.removeLiquidity(lpTokensToRemove, 0, 0);
 
       const tokenABalanceAfter = await tokenA.balanceOf(owner.address);
       const tokenBBalanceAfter = await tokenB.balanceOf(owner.address);
@@ -189,13 +191,13 @@ describe("LiquidityPool", function () {
     it("Should emit Withdraw event", async function () {
       const lpTokensToRemove = await liquidityPool.balanceOf(owner.address);
 
-      await expect(liquidityPool.removeLiquidity(lpTokensToRemove))
+      await expect(liquidityPool.removeLiquidity(lpTokensToRemove, 0, 0))
         .to.emit(liquidityPool, "Withdraw");
     });
 
     it("Should update reserves after removing liquidity", async function () {
       const lpTokensToRemove = await liquidityPool.balanceOf(owner.address);
-      await liquidityPool.removeLiquidity(lpTokensToRemove);
+      await liquidityPool.removeLiquidity(lpTokensToRemove, 0, 0);
 
       expect(await liquidityPool.reserve0()).to.be.closeTo(0, 1000);
       expect(await liquidityPool.reserve1()).to.be.closeTo(0, 1000);
@@ -206,13 +208,13 @@ describe("LiquidityPool", function () {
       const excessAmount = ethers.parseEther("1");
 
       await expect(
-        liquidityPool.removeLiquidity(lpTokensToRemove + excessAmount)
+        liquidityPool.removeLiquidity(lpTokensToRemove + excessAmount, 0, 0)
       ).to.be.revertedWith("Insufficient balance");
     });
 
     it("Should fail with zero amount", async function () {
       await expect(
-        liquidityPool.removeLiquidity(0)
+        liquidityPool.removeLiquidity(0, 0, 0)
       ).to.be.revertedWith("Invalid amount");
     });
 
@@ -223,12 +225,12 @@ describe("LiquidityPool", function () {
       // First add more liquidity to make totalSupply larger
       await tokenA.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_A);
       await tokenB.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_B);
-      await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B);
+      await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B, 0);
       
       // Now trying to remove 1 LP token might result in 0 tokens due to rounding
       // This could revert with "Insufficient amounts"
       try {
-        await liquidityPool.removeLiquidity(lpTokensToRemove);
+        await liquidityPool.removeLiquidity(lpTokensToRemove, 0, 0);
       } catch (error: unknown) {
         // Either it succeeds or fails with insufficient amounts
         expect((error as Error).message).to.include("Insufficient amounts");
@@ -241,7 +243,7 @@ describe("LiquidityPool", function () {
       // Add initial liquidity
       await tokenA.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_A);
       await tokenB.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_B);
-      await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B);
+      await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B, 0);
 
       // Transfer tokens to users for testing
       await tokenA.transfer(user1.address, ethers.parseEther("500"));
@@ -253,7 +255,7 @@ describe("LiquidityPool", function () {
       await tokenA.connect(user1).approve(await liquidityPool.getAddress(), swapAmount);
 
       const tokenBBalanceBefore = await tokenB.balanceOf(user1.address);
-      await liquidityPool.connect(user1).swap(swapAmount, await tokenA.getAddress());
+      await liquidityPool.connect(user1).swap(swapAmount, 0, await tokenA.getAddress());
       const tokenBBalanceAfter = await tokenB.balanceOf(user1.address);
 
       // User should receive tokenB
@@ -265,7 +267,7 @@ describe("LiquidityPool", function () {
       await tokenB.connect(user1).approve(await liquidityPool.getAddress(), swapAmount);
 
       const tokenABalanceBefore = await tokenA.balanceOf(user1.address);
-      await liquidityPool.connect(user1).swap(swapAmount, await tokenB.getAddress());
+      await liquidityPool.connect(user1).swap(swapAmount, 0, await tokenB.getAddress());
       const tokenABalanceAfter = await tokenA.balanceOf(user1.address);
 
       // User should receive tokenA
@@ -276,7 +278,7 @@ describe("LiquidityPool", function () {
       const swapAmount = ethers.parseEther("100");
       await tokenA.connect(user1).approve(await liquidityPool.getAddress(), swapAmount);
 
-      const tx = await liquidityPool.connect(user1).swap(swapAmount, await tokenA.getAddress());
+      const tx = await liquidityPool.connect(user1).swap(swapAmount, 0, await tokenA.getAddress());
       const receipt = await tx.wait();
       const event = receipt?.logs.find((log: Log) => {
         try {
@@ -301,7 +303,7 @@ describe("LiquidityPool", function () {
       const reserve0Before = await liquidityPool.reserve0();
       const reserve1Before = await liquidityPool.reserve1();
 
-      await liquidityPool.connect(user1).swap(swapAmount, await tokenA.getAddress());
+      await liquidityPool.connect(user1).swap(swapAmount, 0, await tokenA.getAddress());
 
       const reserve0After = await liquidityPool.reserve0();
       const reserve1After = await liquidityPool.reserve1();
@@ -322,7 +324,7 @@ describe("LiquidityPool", function () {
       const reserveOut = await liquidityPool.reserve1();
       const expectedOutput = (amountInWithFee * reserveOut) / (reserveIn * 1000n + amountInWithFee);
 
-      await liquidityPool.connect(user1).swap(swapAmount, await tokenA.getAddress());
+      await liquidityPool.connect(user1).swap(swapAmount, 0, await tokenA.getAddress());
       
       // Check reserves changed correctly
       const newReserveOut = await liquidityPool.reserve1();
@@ -333,7 +335,7 @@ describe("LiquidityPool", function () {
 
     it("Should fail with zero amount", async function () {
       await expect(
-        liquidityPool.swap(0, await tokenA.getAddress())
+        liquidityPool.swap(0, 0, await tokenA.getAddress())
       ).to.be.revertedWith("Insufficient input amount");
     });
 
@@ -343,7 +345,7 @@ describe("LiquidityPool", function () {
 
       await tokenA.connect(user1).approve(await liquidityPool.getAddress(), swapAmount);
       await expect(
-        liquidityPool.connect(user1).swap(swapAmount, invalidToken)
+        liquidityPool.connect(user1).swap(swapAmount, 0, invalidToken)
       ).to.be.revertedWith("Invalid token");
     });
 
@@ -351,20 +353,20 @@ describe("LiquidityPool", function () {
       const swapAmount = ethers.parseEther("100");
 
       await expect(
-        liquidityPool.connect(user1).swap(swapAmount, await tokenA.getAddress())
+        liquidityPool.connect(user1).swap(swapAmount, 0, await tokenA.getAddress())
       ).to.be.reverted;
     });
 
     it("Should fail if there is insufficient liquidity", async function () {
       // Remove all liquidity first
       const lpTokensToRemove = await liquidityPool.balanceOf(owner.address);
-      await liquidityPool.removeLiquidity(lpTokensToRemove);
+      await liquidityPool.removeLiquidity(lpTokensToRemove, 0, 0);
 
       const swapAmount = ethers.parseEther("100");
       await tokenA.connect(user1).approve(await liquidityPool.getAddress(), swapAmount);
 
       await expect(
-        liquidityPool.connect(user1).swap(swapAmount, await tokenA.getAddress())
+        liquidityPool.connect(user1).swap(swapAmount, 0, await tokenA.getAddress())
       ).to.be.revertedWith("Insufficient liquidity");
     });
   });
@@ -374,7 +376,7 @@ describe("LiquidityPool", function () {
       // Owner adds initial liquidity
       await tokenA.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_A);
       await tokenB.approve(await liquidityPool.getAddress(), INITIAL_AMOUNT_B);
-      await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B);
+      await liquidityPool.addLiquidity(INITIAL_AMOUNT_A, INITIAL_AMOUNT_B, 0);
 
       // Transfer tokens to users
       await tokenA.transfer(user1.address, ethers.parseEther("500"));
@@ -387,7 +389,8 @@ describe("LiquidityPool", function () {
       await tokenB.connect(user1).approve(await liquidityPool.getAddress(), ethers.parseEther("500"));
       await liquidityPool.connect(user1).addLiquidity(
         ethers.parseEther("500"),
-        ethers.parseEther("500")
+        ethers.parseEther("500"),
+        0
       );
 
       // User2 adds liquidity
@@ -395,7 +398,8 @@ describe("LiquidityPool", function () {
       await tokenB.connect(user2).approve(await liquidityPool.getAddress(), ethers.parseEther("300"));
       await liquidityPool.connect(user2).addLiquidity(
         ethers.parseEther("300"),
-        ethers.parseEther("300")
+        ethers.parseEther("300"),
+        0
       );
 
       // Check total supply
@@ -404,7 +408,7 @@ describe("LiquidityPool", function () {
 
       // User1 removes their liquidity
       const user1LPBalance = await liquidityPool.balanceOf(user1.address);
-      await liquidityPool.connect(user1).removeLiquidity(user1LPBalance);
+      await liquidityPool.connect(user1).removeLiquidity(user1LPBalance, 0, 0);
 
       // User1 should have approximately their original tokens back
       expect(await tokenA.balanceOf(user1.address)).to.be.closeTo(
