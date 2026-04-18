@@ -35,7 +35,7 @@ describe("YieldFarm", function () {
     // Add initial liquidity
     await tokenA.approve(await liquidityPool.getAddress(), INITIAL_LIQUIDITY);
     await tokenB.approve(await liquidityPool.getAddress(), INITIAL_LIQUIDITY);
-    await liquidityPool.addLiquidity(INITIAL_LIQUIDITY, INITIAL_LIQUIDITY);
+    await liquidityPool.addLiquidity(INITIAL_LIQUIDITY, INITIAL_LIQUIDITY, 0);
 
     // Deploy Yield Farm
     const YieldFarmFactory = await ethers.getContractFactory("YieldFarm");
