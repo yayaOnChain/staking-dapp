@@ -7,6 +7,7 @@ export const LIQUIDITY_POOL_ABI = [
   {
     inputs: [
       { internalType: "uint256", name: "amountIn", type: "uint256" },
+      { internalType: "uint256", name: "minAmountOut", type: "uint256" },
       { internalType: "address", name: "tokenIn", type: "address" },
     ],
     name: "swap",
@@ -32,6 +33,7 @@ export const LIQUIDITY_POOL_ABI = [
     inputs: [
       { internalType: "uint256", name: "amount0", type: "uint256" },
       { internalType: "uint256", name: "amount1", type: "uint256" },
+      { internalType: "uint256", name: "minLPTokens", type: "uint256" },
     ],
     name: "addLiquidity",
     outputs: [{ internalType: "uint256", name: "lpTokens", type: "uint256" }],
@@ -39,7 +41,11 @@ export const LIQUIDITY_POOL_ABI = [
     type: "function",
   },
   {
-    inputs: [{ internalType: "uint256", name: "lpTokens", type: "uint256" }],
+    inputs: [
+      { internalType: "uint256", name: "lpTokens", type: "uint256" },
+      { internalType: "uint256", name: "minAmount0", type: "uint256" },
+      { internalType: "uint256", name: "minAmount1", type: "uint256" },
+    ],
     name: "removeLiquidity",
     outputs: [
       { internalType: "uint256", name: "amount0", type: "uint256" },
