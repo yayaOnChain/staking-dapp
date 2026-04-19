@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { LIQUIDITY_POOL_ABI, ERC20_ABI } from "@/abis";
 import { useApproval } from "@/hooks/useApproval";
 import { useTransactions } from "@/providers/TransactionProvider";
+import { useSettings } from "@/providers/SettingsProvider";
 import type { LiquidityMode } from "@/types";
 
 interface UseLiquidityParams {
@@ -22,6 +23,8 @@ interface UseLiquidityReturn {
   amount1: string;
   setAmount1: (value: string) => void;
   expectedLP: string;
+  expectedRemove0: string;
+  expectedRemove1: string;
   reserve0: bigint | undefined;
   reserve1: bigint | undefined;
   totalSupply: bigint | undefined;
@@ -48,6 +51,7 @@ export const useLiquidity = ({
   token1Address,
 }: UseLiquidityParams): UseLiquidityReturn => {
   const { address } = useAccount();
+  const { slippageTolerance } = useSettings();
   const [mode, setMode] = useState<LiquidityMode>("add");
   const [amount0, setAmount0] = useState("");
   const [amount1, setAmount1] = useState("");
@@ -128,6 +132,24 @@ export const useLiquidity = ({
 
   const expectedLP = calculateLP();
 
+  // Calculate expected remove amounts
+  const calculateRemove = useCallback(() => {
+    if (!amount0 || !totalSupply || !reserve0 || !reserve1 || totalSupply === 0n) {
+      return { expectedAmount0: "0", expectedAmount1: "0" };
+    }
+
+    const lpTokensWei = parseEther(amount0);
+    const amount0Out = (lpTokensWei * reserve0) / totalSupply;
+    const amount1Out = (lpTokensWei * reserve1) / totalSupply;
+
+    return {
+      expectedAmount0: formatEther(amount0Out),
+      expectedAmount1: formatEther(amount1Out),
+    };
+  }, [amount0, totalSupply, reserve0, reserve1]);
+
+  const { expectedAmount0: expectedRemove0, expectedAmount1: expectedRemove1 } = calculateRemove();
+
   // Handle approval for both tokens
   const approve = useCallback(async () => {
     toastIdRef.current = toast.loading("Approving tokens...");
@@ -153,11 +175,15 @@ export const useLiquidity = ({
       setIsSubmitting(true); // Disable button immediately
       toastIdRef.current = toast.loading("Adding liquidity...");
 
+      // Calculate min LP tokens based on expected LP and slippage
+      const expectedLPNum = Number(expectedLP);
+      const minLPTokensStr = (expectedLPNum * ((100 - slippageTolerance) / 100)).toFixed(18);
+
       const txHash = await writeContractAsync({
         address: poolAddress,
         abi: LIQUIDITY_POOL_ABI,
         functionName: "addLiquidity",
-        args: [parseEther(amount0), parseEther(amount1)],
+        args: [parseEther(amount0), parseEther(amount1), parseEther(minLPTokensStr)],
       });
 
       setHash(txHash as Address);
@@ -176,7 +202,7 @@ export const useLiquidity = ({
       setIsSubmitting(false);
       throw error;
     }
-  }, [amount0, amount1, poolAddress, writeContractAsync, addTransaction]);
+  }, [amount0, amount1, poolAddress, writeContractAsync, addTransaction, expectedLP, slippageTolerance]);
 
   // Handle remove liquidity
   const removeLiquidity = useCallback(async () => {
@@ -186,11 +212,18 @@ export const useLiquidity = ({
       setIsSubmitting(true); // Disable button immediately
       toastIdRef.current = toast.loading("Removing liquidity...");
 
+      // Calculate min amounts based on expected returns and slippage
+      const expectedRemove0Num = Number(expectedRemove0);
+      const expectedRemove1Num = Number(expectedRemove1);
+      
+      const minAmount0Str = (expectedRemove0Num * ((100 - slippageTolerance) / 100)).toFixed(18);
+      const minAmount1Str = (expectedRemove1Num * ((100 - slippageTolerance) / 100)).toFixed(18);
+
       const txHash = await writeContractAsync({
         address: poolAddress,
         abi: LIQUIDITY_POOL_ABI,
         functionName: "removeLiquidity",
-        args: [parseEther(amount0)],
+        args: [parseEther(amount0), parseEther(minAmount0Str), parseEther(minAmount1Str)],
       });
 
       setHash(txHash as Address);
@@ -209,7 +242,7 @@ export const useLiquidity = ({
       setIsSubmitting(false);
       throw error;
     }
-  }, [amount0, poolAddress, writeContractAsync, addTransaction]);
+  }, [amount0, poolAddress, writeContractAsync, addTransaction, expectedRemove0, expectedRemove1, slippageTolerance]);
 
   // Reset state
   const resetState = useCallback(() => {
@@ -289,6 +322,8 @@ export const useLiquidity = ({
     amount1,
     setAmount1,
     expectedLP,
+    expectedRemove0,
+    expectedRemove1,
     reserve0,
     reserve1,
     totalSupply,
