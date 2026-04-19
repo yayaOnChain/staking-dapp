@@ -68,6 +68,13 @@ src/
 │   ├── ui/                 # Reusable UI components
 │   └── web3/               # Web3-specific components
 ├── config/                 # Network & contract configuration
+├── contracts/              # Smart contract implementations
+│   ├── LiquidityPool.sol   # AMM liquidity pool with swap functionality
+│   ├── YieldFarm.sol       # Reward distribution farming contract
+│   └── tokens/             # ERC20 token implementations
+│       ├── TokenA.sol      # First ERC20 token
+│       ├── TokenB.sol      # Second ERC20 token
+│       └── RewardToken.sol # Reward token for farming
 ├── hooks/                  # Custom React hooks
 │   ├── useSwap.ts          # Swap logic
 │   ├── useLiquidity.ts     # Liquidity management
@@ -170,7 +177,10 @@ Click "Connect Wallet" in the top-right corner and select your Web3 wallet.
 
 ### 2. Swap Tokens
 1. Navigate to the **Swap** tab
-2. *(Optional)* Click the ⚙️ icon to adjust your **Slippage Tolerance**
+2. *(Optional)* Click the ⚙️ icon to adjust your **Slippage Tolerance** (default: 0.5%)
+   - Slippage tolerance protects against price swings during transaction confirmation
+   - Lower values provide better price execution but may cause transactions to fail during volatile markets
+   - Higher values increase transaction success rate but may result in worse prices
 3. Enter the amount you want to swap
 4. Click **Approve** to allow token spending (first time only)
 5. Click **Swap** and confirm in your wallet
@@ -224,11 +234,11 @@ Click "Connect Wallet" in the top-right corner and select your Web3 wallet.
 
 The DApp interacts with the following smart contracts:
 
-| Contract | Purpose |
-|----------|---------|
-| **Liquidity Pool** | Token swaps and liquidity management |
-| **Yield Farm** | Staking LP tokens and reward distribution |
-| **ERC20 Tokens** | Standard token operations (approve, transfer) |
+| Contract | Purpose | Key Features |
+|----------|---------|--------------|
+| **Liquidity Pool** | Token swaps and liquidity management | Constant product formula (x*y=k) with 0.3% fee, ERC20 LP tokens, add/remove liquidity, swap functionality |
+| **Yield Farm** | Staking LP tokens and reward distribution | Per-block reward distribution, harvest without unstaking, proportional reward sharing, secure reward accounting |
+| **ERC20 Tokens** | Standard token operations | ERC20 standard implementation with approve, transfer, and balance functions |
 
 ---
 
