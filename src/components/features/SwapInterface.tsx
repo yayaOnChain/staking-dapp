@@ -32,7 +32,6 @@ export const SwapInterface = ({
   const { slippageTolerance } = useSettings();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-  // We will pass slippageTolerance later to useSwap, but for now we calculate visually
   const {
     amountIn,
     setAmountIn,

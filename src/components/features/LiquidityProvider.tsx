@@ -41,6 +41,8 @@ export const LiquidityProvider = ({
     amount1,
     setAmount1,
     expectedLP,
+    expectedRemove0,
+    expectedRemove1,
     reserve0,
     reserve1,
     token0Balance,
@@ -214,6 +216,26 @@ export const LiquidityProvider = ({
             placeholder="0.0"
             disabled={isTransactionPending}
           />
+          
+          {amount0 && (
+            <div className="p-4 bg-gray-900/50 rounded-lg text-sm text-gray-400 space-y-2">
+              <div className="flex justify-between">
+                <span>Expected Token 0</span>
+                <span className="text-white font-medium">{expectedRemove0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Expected Token 1</span>
+                <span className="text-white font-medium">{expectedRemove1}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs mt-2 pt-2 border-t border-gray-800">
+                <span>Minimum Expected (after {slippageTolerance}% slippage)</span>
+                <span className="text-gray-300 flex flex-col items-end">
+                  <span>{expectedRemove0 ? (Number(expectedRemove0) * ((100 - slippageTolerance) / 100)).toFixed(6) : "0"}</span>
+                  <span>{expectedRemove1 ? (Number(expectedRemove1) * ((100 - slippageTolerance) / 100)).toFixed(6) : "0"}</span>
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
