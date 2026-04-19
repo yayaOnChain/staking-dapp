@@ -57,18 +57,20 @@ describe('ABIs', () => {
       const swapFunction = LIQUIDITY_POOL_ABI.find(
         (item) => item.type === 'function' && item.name === 'swap'
       );
-      expect(swapFunction?.inputs).toHaveLength(2);
+      expect(swapFunction?.inputs).toHaveLength(3);
       expect(swapFunction?.inputs[0]?.name).toBe('amountIn');
-      expect(swapFunction?.inputs[1]?.name).toBe('tokenIn');
+      expect(swapFunction?.inputs[1]?.name).toBe('minAmountOut');
+      expect(swapFunction?.inputs[2]?.name).toBe('tokenIn');
     });
 
     it('addLiquidity function should have correct inputs', () => {
       const addLiquidityFunction = LIQUIDITY_POOL_ABI.find(
         (item) => item.type === 'function' && item.name === 'addLiquidity'
       );
-      expect(addLiquidityFunction?.inputs).toHaveLength(2);
+      expect(addLiquidityFunction?.inputs).toHaveLength(3);
       expect(addLiquidityFunction?.inputs[0]?.name).toBe('amount0');
       expect(addLiquidityFunction?.inputs[1]?.name).toBe('amount1');
+      expect(addLiquidityFunction?.inputs[2]?.name).toBe('minLPTokens');
     });
   });
 
