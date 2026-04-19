@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { LIQUIDITY_POOL_ABI, ERC20_ABI } from "@/abis";
 import { useApproval } from "@/hooks/useApproval";
 import { useTransactions } from "@/providers/TransactionProvider";
+import { useSettings } from "@/providers/SettingsProvider";
 import type { SwapMode } from "@/types";
 
 interface UseSwapParams {
@@ -41,6 +42,7 @@ export const useSwap = ({
   token1Address,
 }: UseSwapParams): UseSwapReturn => {
   const { address } = useAccount();
+  const { slippageTolerance } = useSettings();
   const [amountIn, setAmountIn] = useState("");
   const [tokenIn, setTokenIn] = useState<SwapMode>("token0");
   const [hash, setHash] = useState<Address | undefined>();
@@ -122,11 +124,15 @@ export const useSwap = ({
       setIsSubmitting(true); // Disable button immediately
       toast.loading("Swapping tokens...", { id: "swap" });
 
+      // Calculate minimum amount out
+      const expectedOutputNum = Number(estimatedOutput);
+      const minimumReceivedStr = (expectedOutputNum * ((100 - slippageTolerance) / 100)).toFixed(18);
+
       const txHash = await writeContractAsync({
         address: poolAddress,
         abi: LIQUIDITY_POOL_ABI,
         functionName: "swap",
-        args: [parseEther(amountIn), currentTokenAddress],
+        args: [parseEther(amountIn), parseEther(minimumReceivedStr), currentTokenAddress],
       });
 
       setHash(txHash as Address);
@@ -153,7 +159,7 @@ export const useSwap = ({
       }
       throw error;
     }
-  }, [amountIn, reserve0, reserve1, poolAddress, currentTokenAddress, writeContractAsync, tokenIn, addTransaction]);
+  }, [amountIn, reserve0, reserve1, poolAddress, currentTokenAddress, writeContractAsync, tokenIn, addTransaction, estimatedOutput, slippageTolerance]);
 
   // Reset state
   const resetState = useCallback(() => {
