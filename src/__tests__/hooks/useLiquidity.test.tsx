@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { mockAddresses } from "@/tests/test-utils";
 import { useLiquidity } from "@/hooks/useLiquidity";
 import { TransactionProvider } from "@/providers/TransactionProvider";
+import { SettingsProvider } from "@/providers/SettingsProvider";
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -14,7 +15,9 @@ const createWrapper = () => {
   });
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <TransactionProvider>{children}</TransactionProvider>
+      <SettingsProvider>
+        <TransactionProvider>{children}</TransactionProvider>
+      </SettingsProvider>
     </QueryClientProvider>
   );
 };
@@ -41,6 +44,8 @@ describe('useLiquidity', () => {
       expect(result.current).toHaveProperty('amount0');
       expect(result.current).toHaveProperty('amount1');
       expect(result.current).toHaveProperty('expectedLP');
+      expect(result.current).toHaveProperty('expectedRemove0');
+      expect(result.current).toHaveProperty('expectedRemove1');
       expect(result.current).toHaveProperty('addLiquidity');
       expect(result.current).toHaveProperty('removeLiquidity');
       expect(result.current).toHaveProperty('approve');

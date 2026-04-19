@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { mockAddresses } from "@/tests/test-utils";
 import { useSwap } from "@/hooks/useSwap";
 import { TransactionProvider } from "@/providers/TransactionProvider";
+import { SettingsProvider } from "@/providers/SettingsProvider";
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -14,7 +15,9 @@ const createWrapper = () => {
   });
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <TransactionProvider>{children}</TransactionProvider>
+      <SettingsProvider>
+        <TransactionProvider>{children}</TransactionProvider>
+      </SettingsProvider>
     </QueryClientProvider>
   );
 };
