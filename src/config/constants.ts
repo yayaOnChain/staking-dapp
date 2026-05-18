@@ -2,6 +2,12 @@ import type { Address } from "viem";
 import type { ContractAddresses, Network } from "@/types";
 
 /**
+ * Application constants
+ */
+export const APP_NAME = "Staking DApp";
+export const WALLET_CONNECT_PROJECT_ID = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID as string || "";
+
+/**
  * Contract addresses by network
  */
 export const CONTRACT_ADDRESSES: Record<Network, ContractAddresses> = {

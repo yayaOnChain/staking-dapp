@@ -73,7 +73,7 @@ export const Navbar = () => {
           </AnimatePresence>
 
           <motion.div layout>
-            <ConnectButton showBalance={false} chainStatus="full" />
+            <ConnectButton showBalance={false} chainStatus="icon" />
           </motion.div>
         </motion.div>
       </div>
