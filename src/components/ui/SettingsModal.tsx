@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useSettings } from "@/providers/SettingsProvider";
+import { useSettings } from "@/hooks/useSettings";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface SettingsModalProps {

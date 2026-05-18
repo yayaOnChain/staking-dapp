@@ -4,7 +4,7 @@ import { formatEther, type Address } from "viem";
 import { toast } from "sonner";
 import { TransactionMonitor } from "@/components/web3/TransactionToast";
 import { useLiquidity } from "@/hooks";
-import { useSettings } from "@/providers/SettingsProvider";
+import { useSettings } from "@/hooks/useSettings";
 import {
   Card,
   Button,

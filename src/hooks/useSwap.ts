@@ -5,8 +5,8 @@ import { parseEther, formatEther, type Address } from "viem";
 import { toast } from "sonner";
 import { LIQUIDITY_POOL_ABI, ERC20_ABI } from "@/abis";
 import { useApproval } from "@/hooks/useApproval";
-import { useTransactions } from "@/providers/TransactionProvider";
-import { useSettings } from "@/providers/SettingsProvider";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useSettings } from "@/hooks/useSettings";
 import type { SwapMode } from "@/types";
 
 interface UseSwapParams {

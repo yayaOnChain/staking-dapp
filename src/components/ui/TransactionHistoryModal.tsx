@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { useTransactions } from "@/providers/TransactionProvider";
+import { useTransactions } from "@/hooks/useTransactions";
 import { useNetworkConfig } from "@/hooks";
 import { getExplorerTxUrl } from "@/config/constants";
 import { Button } from "./Button";

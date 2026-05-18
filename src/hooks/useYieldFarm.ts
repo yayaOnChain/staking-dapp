@@ -5,7 +5,7 @@ import { parseEther, formatEther, type Address } from "viem";
 import { toast } from "sonner";
 import { YIELD_FARM_ABI, ERC20_ABI } from "@/abis";
 import { useApproval } from "@/hooks/useApproval";
-import { useTransactions } from "@/providers/TransactionProvider";
+import { useTransactions } from "@/hooks/useTransactions";
 
 interface UseYieldFarmParams {
   farmAddress: Address;
@@ -175,7 +175,7 @@ export const useYieldFarm = ({
       setIsSubmitting(false);
       throw error;
     }
-  }, [amount, farmAddress, writeContractAsync]);
+  }, [amount, farmAddress, writeContractAsync, addTransaction]);
 
   // Handle withdraw
   const withdraw = useCallback(async () => {
@@ -211,7 +211,7 @@ export const useYieldFarm = ({
       setIsSubmitting(false);
       throw error;
     }
-  }, [amount, farmAddress, writeContractAsync]);
+  }, [amount, farmAddress, writeContractAsync, addTransaction]);
 
   // Handle harvest only
   const harvest = useCallback(async () => {
