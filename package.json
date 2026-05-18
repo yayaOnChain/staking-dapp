@@ -8,7 +8,7 @@
     "compile": "npx hardhat compile",
     "deploy:local": "npx hardhat run src/scripts/deploy.ts --network localhost",
     "deploy:sepolia": "npx hardhat run src/scripts/deploy.ts --network sepolia",
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "predeploy": "npm run build && npm run lint && npm run type-check",
