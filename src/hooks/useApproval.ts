@@ -41,7 +41,7 @@ export const useApproval = ({
   });
 
   // Setup write contract
-  const { writeContract } = useWriteContract();
+  const { writeContractAsync } = useWriteContract();
 
   // Check if approved based on current allowance from contract
   const isApproved = allowance !== undefined && allowance > 0n;
@@ -61,11 +61,11 @@ export const useApproval = ({
       setIsApproving(true);
 
       try {
-        await writeContract({
+        await writeContractAsync({
           address: tokenAddress,
           abi: ERC20_ABI,
           functionName: "approve",
-          args: [spenderAddress, amount ?? BigInt(2 ** 256 - 1)], // Max uint256 if not specified
+          args: [spenderAddress, amount ?? (2n ** 256n) - 1n], // Max uint256 if not specified
         });
       } catch (error) {
         console.error("Approval error:", error);
@@ -73,7 +73,7 @@ export const useApproval = ({
         throw error;
       }
     },
-    [userAddress, tokenAddress, spenderAddress, writeContract],
+    [userAddress, tokenAddress, spenderAddress, writeContractAsync],
   );
 
   // Reset approval state

@@ -155,10 +155,17 @@ export const useLiquidity = ({
     toastIdRef.current = toast.loading("Approving tokens...");
 
     try {
-      await Promise.all([
-        token0Approval.approve(),
-        token1Approval.approve(),
-      ]);
+      // Request approvals sequentially to prevent wallet popup conflicts
+      if (!token0Approval.isApproved) {
+        await token0Approval.approve();
+      }
+      
+      if (!token1Approval.isApproved) {
+        await token1Approval.approve();
+      }
+      
+      if (toastIdRef.current) toast.dismiss(toastIdRef.current);
+      toast.success("Approval transaction(s) sent!");
     } catch (error) {
       console.error("Approval error:", error);
       if (toastIdRef.current) toast.dismiss(toastIdRef.current);
