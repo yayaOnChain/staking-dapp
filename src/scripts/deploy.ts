@@ -87,10 +87,12 @@ async function main() {
   console.log("\n" + "=".repeat(50));
   console.log("📝 Next Steps:");
   console.log("=".repeat(50));
-  console.log("1. Copy addresses above to src/config/contracts.ts");
-  console.log("2. Fund deployer address with Sepolia ETH");
-  console.log("3. Add liquidity to the pool");
-  console.log("4. Transfer reward tokens to YieldFarm contract");
+  console.log("1. Update contract addresses in src/config/contracts.ts (if not auto-loaded)");
+  console.log("2. Fund the YieldFarm with RewardTokens by running:");
+  console.log(`   npm run fund:${networkName === "localhost" ? "local" : "sepolia"}`);
+  console.log("3. Start the web app with: npm run dev");
+  console.log("4. Go to the 'Liquidity' tab to provide initial liquidity (Token A + Token B)");
+  console.log("5. Go to the 'Farm' tab to stake your LP tokens and earn rewards!");
 }
 
 main().catch((error) => {
