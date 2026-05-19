@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-import { formatEther, type Address } from "viem";
+import { formatEther, parseEther, type Address } from "viem";
 import { toast } from "sonner";
 import { TransactionMonitor } from "@/components/web3/TransactionToast";
 import { useLiquidity } from "@/hooks";
@@ -248,7 +248,7 @@ export const LiquidityProvider = ({
           className="mt-6"
           onClick={handleApprove}
           isLoading={isApproving}
-          disabled={isTransactionPending || !amount0 || !amount1}
+          disabled={isTransactionPending || !amount0 || parseEther(amount0) === 0n || parseEther(amount0) > token0Balance! || !amount1 || parseEther(amount1) === 0n || parseEther(amount1) > token1Balance!}
         >
           🔓 Approve Both Tokens
         </Button>

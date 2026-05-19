@@ -162,7 +162,7 @@ export const YieldFarmDashboard = ({
               className="col-span-2"
               onClick={handleApprove}
               isLoading={isApproving}
-              disabled={isTransactionPending}
+              disabled={isTransactionPending || !amount || parseEther(amount) === 0n || parseEther(amount) > lpBalance!}
             >
               Approve LP Tokens
             </Button>
