@@ -8,6 +8,8 @@
     "compile": "npx hardhat compile",
     "deploy:local": "npx hardhat run src/scripts/deploy.ts --network localhost",
     "deploy:sepolia": "npx hardhat run src/scripts/deploy.ts --network sepolia",
+    "fund:local": "npx hardhat run src/scripts/fund-farm.ts --network localhost",
+    "fund:sepolia": "npx hardhat run src/scripts/fund-farm.ts --network sepolia",
     "dev": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
