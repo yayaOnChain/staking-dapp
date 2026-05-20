@@ -95,7 +95,7 @@ export const YieldFarmDashboard = ({
 
   if (!address) {
     return (
-      <Card padding="lg" className="max-w-lg mx-auto text-center border border-yellow-500/20">
+      <Card padding="lg" className="max-w-lg mx-auto text-center">
         <p className="text-gray-400">Connect your wallet to start farming</p>
       </Card>
     );
