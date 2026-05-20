@@ -30,7 +30,7 @@ export const Footer = () => {
   const networkName = NETWORK_CONFIG[DEFAULT_NETWORK].name;
 
   return (
-    <footer className="border-t border-gray-800 bg-gray-900/50 mt-12">
+    <footer className="border-t border-gray-800 bg-gray-900/50 mt-12 pb-[env(safe-area-inset-bottom)]">
       <div className="max-w-6xl mx-auto p-6">
         {/* Contract Addresses (For Reference) */}
         <Card padding="md" className="mb-6 bg-gray-800/50">

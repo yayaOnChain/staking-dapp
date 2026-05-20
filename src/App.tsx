@@ -98,7 +98,7 @@ const DashboardContent = () => {
       <Navbar />
 
       {/* Tab Navigation */}
-      <div className="flex justify-center mt-8 mb-6 px-4">
+      <div className="flex justify-center mt-8 mb-6 max-w-6xl mx-auto w-full px-4">
         <div className="bg-gray-800 p-1 rounded-xl inline-flex shadow-lg relative">
           {TABS.map((tab) => (
             <button

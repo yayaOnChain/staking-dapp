@@ -106,8 +106,8 @@ export const SwapInterface = ({
   }
 
   return (
-    <Card padding="lg" className="max-w-md mx-auto relative">
-      <div className="flex justify-between items-center mb-6">
+      <Card padding="lg" className="max-w-md mx-auto relative w-full overflow-hidden">
+      <div className="flex justify-between items-center mb-4 sm:mb-6">
         <h2 className="text-2xl font-bold text-white">Swap Tokens</h2>
         <div className="relative">
           <button
@@ -129,22 +129,24 @@ export const SwapInterface = ({
       {/* Input Section */}
       <div className="space-y-4">
         {/* Token In */}
-        <div className="bg-gray-900 rounded-lg p-4">
-          <div className="flex justify-between mb-2">
-            <label className="text-sm text-gray-400">From</label>
-            <span className="text-sm text-gray-400">
+        <div className="bg-gray-900 rounded-lg p-3 sm:p-4">
+          <div className="flex justify-between mb-2 gap-2">
+            <label className="text-sm text-gray-400 shrink-0">From</label>
+            <span className="text-sm text-gray-400 truncate">
               Balance: {formatEther(balance || 0n)}
             </span>
           </div>
-          <div className="flex gap-2">
-            <Input
-              type="number"
-              value={amountIn}
-              onChange={(e) => setAmountIn(e.target.value)}
-              placeholder="0.0"
-              className="flex-1 text-xl"
-              disabled={isTransactionPending}
-            />
+          <div className="flex gap-2 items-center min-w-0">
+            <div className="flex-1 min-w-0">
+              <Input
+                type="number"
+                value={amountIn}
+                onChange={(e) => setAmountIn(e.target.value)}
+                placeholder="0.0"
+                className="text-lg sm:text-xl"
+                disabled={isTransactionPending}
+              />
+            </div>
             <TokenSelectButton
               symbol={currentTokenSymbol}
               isActive={true}
@@ -162,19 +164,21 @@ export const SwapInterface = ({
         </div>
 
         {/* Token Out (Read Only) */}
-        <div className="bg-gray-900 rounded-lg p-4">
+        <div className="bg-gray-900 rounded-lg p-3 sm:p-4">
           <label className="text-sm text-gray-400 mb-2 block">
             To (Estimated)
           </label>
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              value={estimatedOutput}
-              readOnly
-              placeholder="0.0"
-              className="flex-1 text-xl"
-              disabled={isTransactionPending}
-            />
+          <div className="flex gap-2 items-center min-w-0">
+            <div className="flex-1 min-w-0">
+              <Input
+                type="text"
+                value={estimatedOutput}
+                readOnly
+                placeholder="0.0"
+                className="text-lg sm:text-xl"
+                disabled={isTransactionPending}
+              />
+            </div>
             <TokenSelectButton
               symbol={outputTokenSymbol}
               isActive={false}

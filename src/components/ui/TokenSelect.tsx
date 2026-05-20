@@ -18,7 +18,7 @@ export const TokenSelectButton = ({
   return (
     <button
       className={cn(
-        "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors",
+        "shrink-0 px-2 py-1.5 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
         isActive
           ? "bg-blue-600 text-white"
           : "bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white cursor-not-allowed",
