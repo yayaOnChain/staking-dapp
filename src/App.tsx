@@ -98,13 +98,18 @@ const DashboardContent = () => {
       <Navbar />
 
       {/* Tab Navigation */}
-      <div className="flex justify-center mt-8 mb-6 max-w-6xl mx-auto w-full px-4">
-        <div className="bg-gray-800 p-1 rounded-xl inline-flex shadow-lg relative">
+      <div className="flex justify-center mt-6 sm:mt-8 mb-4 sm:mb-6 max-w-6xl mx-auto w-full px-4 sm:px-6">
+        <div className="bg-gray-800 p-1 rounded-xl flex w-full sm:w-auto sm:inline-flex shadow-lg relative overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+          <style>{`
+            .bg-gray-800::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative px-6 py-3 rounded-lg capitalize font-medium transition-colors z-10 ${
+              className={`flex-1 sm:flex-none relative flex justify-center items-center px-2 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base rounded-lg capitalize font-medium transition-colors z-10 whitespace-nowrap shrink-0 ${
                 activeTab === tab.id
                   ? "text-white"
                   : "text-gray-400 hover:text-white hover:bg-gray-700/50"
@@ -117,7 +122,7 @@ const DashboardContent = () => {
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
-              <span className="mr-2 relative z-10">{tab.icon}</span>
+              <span className="mr-1.5 sm:mr-2 relative z-10">{tab.icon}</span>
               <span className="relative z-10">{tab.label}</span>
             </button>
           ))}
@@ -125,7 +130,7 @@ const DashboardContent = () => {
       </div>
 
       {/* Feature Content */}
-      <main className="flex-1 max-w-6xl mx-auto p-4 w-full">
+      <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6 w-full">
         <AnimatePresence mode="wait">
           {renderContent()}
         </AnimatePresence>
