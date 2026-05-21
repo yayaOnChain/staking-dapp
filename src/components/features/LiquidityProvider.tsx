@@ -148,14 +148,14 @@ export const LiquidityProvider = ({
       </div>
 
       {/* Pool Stats */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
         <StatBox
           label="Pool Reserve Token 0"
-          value={formatEther(reserve0 || 0n)}
+          value={Number(formatEther(reserve0 || 0n)).toFixed(4)}
         />
         <StatBox
           label="Pool Reserve Token 1"
-          value={formatEther(reserve1 || 0n)}
+          value={Number(formatEther(reserve1 || 0n)).toFixed(4)}
         />
       </div>
 
@@ -264,7 +264,7 @@ export const LiquidityProvider = ({
           isLoading={isSubmitting}
           disabled={
             isTransactionPending ||
-            !amount0 ||
+            !amount0 || parseEther(amount0) === 0n ||
             (mode === "add" && !amount1)
           }
         >

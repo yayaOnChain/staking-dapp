@@ -39,9 +39,11 @@ export const StatBox = forwardRef<HTMLDivElement, StatBoxProps>(
         <p className="text-xs text-gray-400 mb-1">{label}</p>
         <p
           className={cn(
-            "text-xl font-mono",
-            valueVariantStyles[variant],
+            "font-mono break-words leading-tight",
+            "text-xl",
             typeof value === "string" && value.length > 10 && "text-sm",
+            typeof value === "string" && value.length > 20 && "text-xs",
+            valueVariantStyles[variant],
           )}
         >
           {value}
