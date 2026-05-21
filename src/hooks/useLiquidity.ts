@@ -30,6 +30,7 @@ interface UseLiquidityReturn {
   totalSupply: bigint | undefined;
   token0Balance: bigint | undefined;
   token1Balance: bigint | undefined;
+  lpBalance: bigint | undefined;
   isApproved: boolean;
   isApproving: boolean;
   isConfirming: boolean;
@@ -103,6 +104,13 @@ export const useLiquidity = ({
   });
 
   // User balances
+  const { data: lpBalance, refetch: refetchLpBalance } = useReadContract({
+    address: poolAddress,
+    abi: ERC20_ABI,
+    functionName: "balanceOf",
+    args: [address as Address],
+  });
+
   const { data: token0Balance, refetch: refetchToken0Balance } = useReadContract({
     address: token0Address,
     abi: ERC20_ABI,
@@ -277,6 +285,7 @@ export const useLiquidity = ({
       refetchTotalSupply();
       refetchReserve0();
       refetchReserve1();
+      refetchLpBalance();
       refetchToken0Balance();
       refetchToken1Balance();
       token0Approval.refetchAllowance();
@@ -313,6 +322,7 @@ export const useLiquidity = ({
     refetchTotalSupply,
     refetchReserve0,
     refetchReserve1,
+    refetchLpBalance,
     refetchToken0Balance,
     refetchToken1Balance,
     token0Approval,
@@ -336,6 +346,7 @@ export const useLiquidity = ({
     totalSupply,
     token0Balance,
     token1Balance,
+    lpBalance,
     isApproved,
     isApproving,
     isConfirming,

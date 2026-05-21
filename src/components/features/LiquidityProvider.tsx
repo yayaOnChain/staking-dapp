@@ -47,6 +47,7 @@ export const LiquidityProvider = ({
     reserve1,
     token0Balance,
     token1Balance,
+    lpBalance,
     isApproved,
     isApproving,
     isConfirming,
@@ -215,6 +216,11 @@ export const LiquidityProvider = ({
             onChange={(e) => setAmount0(e.target.value)}
             placeholder="0.0"
             disabled={isTransactionPending}
+            rightElement={
+              <span className="text-sm text-gray-400">
+                Bal: {formatEther(lpBalance || 0n)}
+              </span>
+            }
           />
           
           {amount0 && (
@@ -264,8 +270,10 @@ export const LiquidityProvider = ({
           isLoading={isSubmitting}
           disabled={
             isTransactionPending ||
-            !amount0 || parseEther(amount0) === 0n ||
-            (mode === "add" && !amount1)
+            !amount0 || 
+            parseEther(amount0 || "0") === 0n ||
+            (mode === "add" && (!amount1 || parseEther(amount1 || "0") === 0n || (token0Balance !== undefined && parseEther(amount0 || "0") > token0Balance) || (token1Balance !== undefined && parseEther(amount1 || "0") > token1Balance))) ||
+            (mode === "remove" && (lpBalance !== undefined && parseEther(amount0 || "0") > lpBalance))
           }
         >
           {isConfirming
