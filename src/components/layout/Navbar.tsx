@@ -16,10 +16,10 @@ export const Navbar = () => {
   return (
     <nav className="w-full bg-gray-900/80 backdrop-blur-md sticky top-0 z-50 pt-[env(safe-area-inset-top)]">
       <div className="relative">
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-blue-500/50 to-transparent" />
         <div className="flex justify-between items-center max-w-6xl mx-auto px-4 py-2.5 sm:px-6 sm:py-3">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-linear-to-br from-blue-500 to-purple-600 rounded-md flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
               <span className="text-white font-bold text-xs sm:text-sm">SD</span>
             </div>
             <div className="min-w-0">
