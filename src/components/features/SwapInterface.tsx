@@ -39,6 +39,7 @@ export const SwapInterface = ({
     setTokenIn,
     estimatedOutput,
     balance,
+    hasLiquidity,
     isApproved,
     isApproving,
     isConfirming,
@@ -209,7 +210,17 @@ export const SwapInterface = ({
       )}
 
       {/* Action Button */}
-      {!isApproved ? (
+      {!hasLiquidity ? (
+        <Button
+          variant="secondary"
+          size="lg"
+          fullWidth
+          className="mt-6"
+          disabled={true}
+        >
+          Insufficient Liquidity
+        </Button>
+      ) : !isApproved ? (
         <Button
           variant="primary"
           size="lg"

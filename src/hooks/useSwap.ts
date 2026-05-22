@@ -22,6 +22,7 @@ interface UseSwapReturn {
   setTokenIn: (mode: SwapMode) => void;
   estimatedOutput: string;
   balance: bigint | undefined;
+  hasLiquidity: boolean;
   isApproved: boolean;
   isApproving: boolean;
   isConfirming: boolean;
@@ -216,6 +217,9 @@ export const useSwap = ({
     updateTransactionStatus,
   ]);
 
+  // Calculate if pool has liquidity
+  const hasLiquidity = reserve0 !== undefined && reserve1 !== undefined && reserve0 > 0n && reserve1 > 0n;
+
   return {
     amountIn,
     setAmountIn,
@@ -223,6 +227,7 @@ export const useSwap = ({
     setTokenIn,
     estimatedOutput,
     balance: tokenBalance,
+    hasLiquidity,
     isApproved,
     isApproving,
     isConfirming,
