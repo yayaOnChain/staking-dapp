@@ -46,6 +46,9 @@ describe('useLiquidity', () => {
       expect(result.current).toHaveProperty('expectedLP');
       expect(result.current).toHaveProperty('expectedRemove0');
       expect(result.current).toHaveProperty('expectedRemove1');
+      expect(result.current).toHaveProperty('token0Balance');
+      expect(result.current).toHaveProperty('token1Balance');
+      expect(result.current).toHaveProperty('lpBalance');
       expect(result.current).toHaveProperty('addLiquidity');
       expect(result.current).toHaveProperty('removeLiquidity');
       expect(result.current).toHaveProperty('approve');

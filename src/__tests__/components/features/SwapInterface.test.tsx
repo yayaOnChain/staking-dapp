@@ -15,6 +15,7 @@ vi.mock('../../../hooks/useSwap', () => ({
     setTokenIn: vi.fn(),
     estimatedOutput: '0',
     balance: BigInt(100 * 1e18),
+    hasLiquidity: true,
     isApproved: false,
     isApproving: false,
     isConfirming: false,

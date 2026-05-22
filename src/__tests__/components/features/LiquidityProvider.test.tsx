@@ -21,6 +21,7 @@ vi.mock('../../../hooks/useLiquidity', () => ({
     totalSupply: BigInt(100 * 1e18),
     token0Balance: BigInt(100 * 1e18),
     token1Balance: BigInt(100 * 1e18),
+    lpBalance: BigInt(100 * 1e18),
     isApproved: false,
     isApproving: false,
     isConfirming: false,

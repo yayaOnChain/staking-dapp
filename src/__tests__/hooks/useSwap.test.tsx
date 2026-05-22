@@ -44,6 +44,7 @@ describe('useSwap', () => {
       expect(result.current).toHaveProperty('tokenIn');
       expect(result.current).toHaveProperty('setTokenIn');
       expect(result.current).toHaveProperty('estimatedOutput');
+      expect(result.current).toHaveProperty('hasLiquidity');
       expect(result.current).toHaveProperty('approve');
       expect(result.current).toHaveProperty('swap');
       expect(result.current).toHaveProperty('resetState');
