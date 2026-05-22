@@ -145,14 +145,14 @@ export const SwapInterface = ({
                 onChange={(e) => setAmountIn(e.target.value)}
                 placeholder="0.0"
                 className="text-lg sm:text-xl"
-                disabled={isTransactionPending}
+                disabled={isTransactionPending || !hasLiquidity}
               />
             </div>
             <TokenSelectButton
               symbol={currentTokenSymbol}
-              isActive={true}
+              isActive={hasLiquidity}
               onClick={toggleTokenIn}
-              disabled={isTransactionPending}
+              disabled={isTransactionPending || !hasLiquidity}
             />
           </div>
         </div>

@@ -151,7 +151,7 @@ export const YieldFarmDashboard = ({
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0.0"
-          disabled={isTransactionPending}
+          disabled={isTransactionPending || lpBalance === 0n}
         />
 
         {/* Action Buttons */}

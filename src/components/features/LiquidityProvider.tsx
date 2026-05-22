@@ -215,7 +215,7 @@ export const LiquidityProvider = ({
             value={amount0}
             onChange={(e) => setAmount0(e.target.value)}
             placeholder="0.0"
-            disabled={isTransactionPending}
+            disabled={isTransactionPending || lpBalance === 0n}
             rightElement={
               <span className="text-sm text-gray-400">
                 Bal: {formatEther(lpBalance || 0n)}
