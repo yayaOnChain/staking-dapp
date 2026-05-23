@@ -96,7 +96,15 @@ export const useYieldFarm = ({
   });
 
   const { data: blockNumber } = useBlockNumber({
-    watch: isHardhatNetwork,
+    // On local Hardhat, blocks are mined on a fixed interval.
+    // Polling block updates every second keeps the UI responsive
+    // without changing the actual on-chain reward cadence.
+    watch: isHardhatNetwork
+      ? {
+          enabled: true,
+          pollingInterval: 1000,
+        }
+      : false,
   });
 
   const stakedAmount = formatEther(userInfo?.[0] || 0n);

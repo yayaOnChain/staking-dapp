@@ -27,6 +27,9 @@ const config: HardhatUserConfig = {
       chainId: 31337,
       mining: intervalMiningEnabled
         ? {
+            // Local dev mode mines a block every 5 seconds to mimic a live network.
+            // The frontend can poll for new blocks more frequently without changing
+            // the actual reward accrual cadence on-chain.
             auto: false,
             interval: 5000,
           }
