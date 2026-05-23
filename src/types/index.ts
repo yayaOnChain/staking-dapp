@@ -3,7 +3,7 @@ import type { Address } from "viem";
 /**
  * Network configurations
  */
-export type Network = "sepolia" | "mainnet";
+export type Network = "sepolia" | "mainnet" | "hardhat";
 
 /**
  * Contract addresses configuration

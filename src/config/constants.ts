@@ -25,6 +25,13 @@ export const CONTRACT_ADDRESSES: Record<Network, ContractAddresses> = {
     TOKEN_B: "0x0000000000000000000000000000000000000000" as Address,
     REWARD_TOKEN: "0x0000000000000000000000000000000000000000" as Address,
   },
+  hardhat: {
+    POOL: import.meta.env.VITE_POOL_ADDRESS as Address,
+    FARM: import.meta.env.VITE_FARM_ADDRESS as Address,
+    TOKEN_A: import.meta.env.VITE_TOKEN_A_ADDRESS as Address,
+    TOKEN_B: import.meta.env.VITE_TOKEN_B_ADDRESS as Address,
+    REWARD_TOKEN: import.meta.env.VITE_REWARD_TOKEN_ADDRESS as Address,
+  },
 };
 
 /**
@@ -42,6 +49,12 @@ export const NETWORK_CONFIG = {
     name: "Ethereum Mainnet",
     explorerUrl: "https://etherscan.io",
     rpcUrl: import.meta.env.VITE_MAINNET_RPC_URL || "https://rpc.ankr.com/eth",
+  },
+  hardhat: {
+    chainId: 31337,
+    name: "Hardhat Local",
+    explorerUrl: "",
+    rpcUrl: "http://127.0.0.1:8545",
   },
 } as const;
 
