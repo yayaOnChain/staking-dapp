@@ -1,6 +1,6 @@
 import { useAccount } from "wagmi";
 import { useMemo } from "react";
-import { mainnet, sepolia } from "wagmi/chains";
+import { hardhat, mainnet, sepolia } from "wagmi/chains";
 import { CONTRACT_ADDRESSES, DEFAULT_NETWORK } from "@/config/constants";
 import type { Network, ContractAddresses } from "@/types";
 
@@ -21,6 +21,8 @@ export const useNetworkConfig = (): NetworkConfigReturn => {
 
     if (chainId === mainnet.id) {
       resolvedNetwork = "mainnet";
+    } else if (chainId === hardhat.id) {
+      resolvedNetwork = "hardhat";
     } else if (chainId === sepolia.id) {
       resolvedNetwork = "sepolia";
     }

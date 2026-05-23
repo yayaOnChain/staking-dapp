@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useAccount, useBlockNumber, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { hardhat } from "wagmi/chains";
 import { useQueryClient } from "@tanstack/react-query";
 import { parseEther, formatEther, type Address } from "viem";
 import { toast } from "sonner";
@@ -39,7 +40,8 @@ export const useYieldFarm = ({
   farmAddress,
   lpTokenAddress,
 }: UseYieldFarmParams): UseYieldFarmReturn => {
-  const { address } = useAccount();
+  const { address, chainId } = useAccount();
+  const isHardhatNetwork = chainId === hardhat.id;
   const [amount, setAmount] = useState("");
   const [hash, setHash] = useState<Address | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -93,6 +95,10 @@ export const useYieldFarm = ({
     args: [address as Address],
   });
 
+  const { data: blockNumber } = useBlockNumber({
+    watch: isHardhatNetwork,
+  });
+
   const stakedAmount = formatEther(userInfo?.[0] || 0n);
 
   // Invalidate and refetch data after successful transaction
@@ -140,6 +146,14 @@ export const useYieldFarm = ({
     queryClient,
     updateTransactionStatus,
   ]);
+
+  useEffect(() => {
+    if (!isHardhatNetwork || !address) {
+      return;
+    }
+
+    refetchPendingRewards();
+  }, [address, blockNumber, isHardhatNetwork, refetchPendingRewards]);
 
   // Handle deposit
   const deposit = useCallback(async () => {

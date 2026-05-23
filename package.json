@@ -6,6 +6,7 @@
     "clean": "npx hardhat clean",
     "clean:types": "find . -name '*.d.ts' -not -path '*/node_modules/*' -not -path '*/typechain-types/*' -not -name 'vite-env*' -type f -delete",
     "compile": "npx hardhat compile",
+    "node:local": "HARDHAT_INTERVAL_MINING=true npx hardhat node",
     "deploy:local": "npx hardhat run src/scripts/deploy.ts --network localhost",
     "deploy:sepolia": "npx hardhat run src/scripts/deploy.ts --network sepolia",
     "fund:local": "npx hardhat run src/scripts/fund-farm.ts --network localhost",

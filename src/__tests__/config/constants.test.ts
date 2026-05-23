@@ -93,12 +93,20 @@ describe('constants', () => {
       expect(NETWORK_CONFIG.mainnet).toBeDefined();
     });
 
+    it('should have hardhat network configuration', () => {
+      expect(NETWORK_CONFIG.hardhat).toBeDefined();
+    });
+
     it('should have correct sepolia chainId', () => {
       expect(NETWORK_CONFIG.sepolia.chainId).toBe(11155111);
     });
 
     it('should have correct mainnet chainId', () => {
       expect(NETWORK_CONFIG.mainnet.chainId).toBe(1);
+    });
+
+    it('should have correct hardhat chainId', () => {
+      expect(NETWORK_CONFIG.hardhat.chainId).toBe(31337);
     });
 
     it('should have sepolia network name', () => {

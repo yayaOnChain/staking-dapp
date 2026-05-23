@@ -10,6 +10,8 @@ dotenv.config({ path: '.env.hardhat' });
 // Load public variables (.env - contract addresses)
 dotenv.config();
 
+const intervalMiningEnabled = process.env.HARDHAT_INTERVAL_MINING === "true";
+
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.20",
@@ -23,6 +25,14 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       chainId: 31337,
+      mining: intervalMiningEnabled
+        ? {
+            auto: false,
+            interval: 5000,
+          }
+        : {
+            auto: true,
+          },
     },
     // Configuration for Sepolia Testnet (Best for testing)
     sepolia: {
