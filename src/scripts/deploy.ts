@@ -51,9 +51,12 @@ async function main() {
   const farmAddress = await yieldFarm.getAddress();
   console.log(`   ✅ YieldFarm deployed: ${farmAddress}`);
 
+  // Determine network name
+  const networkName = network.name;
+
   // 5. Output addresses
   const addresses = {
-    sepolia: {
+    [networkName]: {
       LP_TOKEN: lpAddress,
       FARM: farmAddress,
       TOKEN_A: tokenAAddress,
@@ -67,8 +70,7 @@ async function main() {
   console.log("=".repeat(50));
   console.log(JSON.stringify(addresses, null, 2));
 
-  // Determine network and save to appropriate file
-  const networkName = network.name;
+  // Save to appropriate file
   const filename = networkName === "localhost"
     ? "contract-addresses-local.json"
     : networkName === "sepolia"
