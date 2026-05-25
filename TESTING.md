@@ -2,37 +2,52 @@
 
 ## Overview
 
-This project has a comprehensive test suite with **16 test files** and **235 tests** covering unit tests, integration tests, and component tests for the Staking DApp application.
+This project has a comprehensive frontend test suite with **28 Vitest files** and **295 tests** covering unit tests, integration tests, hooks, providers, and component behavior for the Staking DApp application.
 
-**Current Status:** ✅ All 235 tests passing
+**Current Status:** ✅ All 295 frontend tests passing
 
 ## Test Structure
 
 ```
 src/__tests__/
+├── App.test.tsx                  # App shell and tab navigation
 ├── abis/
 │   └── index.test.ts              # ABI structure validation (34 tests)
+├── components/
+│   ├── features/
+│   │   ├── LiquidityProvider.test.tsx   # Liquidity feature states and flows
+│   │   ├── SwapInterface.test.tsx       # Swap feature states and flows
+│   │   └── YieldFarmDashboard.test.tsx  # Yield farm feature states and flows
+│   ├── layout/
+│   │   ├── Footer.test.tsx              # Footer content and contract references
+│   │   └── Navbar.test.tsx              # Navbar wallet/network states
+│   ├── ui/
+│   │   ├── Button.test.tsx              # Button component
+│   │   ├── Card.test.tsx                # Card components
+│   │   ├── ErrorBoundary.test.tsx       # Error fallback handling
+│   │   ├── Input.test.tsx               # Input component
+│   │   ├── SettingsModal.test.tsx       # Slippage settings modal
+│   │   ├── StatBox.test.tsx             # StatBox component
+│   │   ├── TokenSelect.test.tsx         # Token selector button
+│   │   └── TransactionHistoryModal.test.tsx # Transaction drawer behavior
+│   └── web3/
+│       └── TransactionToast.test.tsx    # Transaction receipt feedback
 ├── config/
 │   ├── constants.test.ts          # Network & contract config (24 tests)
 │   └── contracts.test.ts          # Contract exports (6 tests)
+│   └── wagmi.test.ts              # Wagmi config wiring
 ├── lib/
 │   └── utils.test.ts              # Utility functions (12 tests)
 ├── hooks/
 │   ├── useApproval.test.tsx       # Token approval hook (7 tests)
+│   ├── useNetworkConfig.test.tsx  # Network resolution hook
+│   ├── useSettings.test.tsx       # Slippage settings hook
 │   ├── useSwap.test.tsx           # Swap functionality hook (9 tests)
+│   ├── useTransactions.test.tsx   # Transaction state hook/provider integration
 │   ├── useLiquidity.test.tsx      # Liquidity management hook (11 tests)
 │   └── useYieldFarm.test.tsx      # Yield farming hook (9 tests)
-└── components/
-    ├── ui/
-    │   ├── Button.test.tsx        # Button component (27 tests)
-    │   ├── Card.test.tsx          # Card components (14 tests)
-    │   ├── Input.test.tsx         # Input component (23 tests)
-    │   ├── StatBox.test.tsx       # StatBox component (14 tests)
-    │   └── TokenSelect.test.tsx   # TokenSelect component (28 tests)
-    └── features/
-        ├── SwapInterface.test.tsx       # Swap feature (4 tests)
-        ├── LiquidityProvider.test.tsx   # Liquidity feature (4 tests)
-        └── YieldFarmDashboard.test.tsx  # Yield Farm feature (5 tests)
+└── providers/
+    └── AppProviders.test.tsx      # Root provider composition
 ```
 
 ## Test Summary
@@ -40,12 +55,14 @@ src/__tests__/
 | Category | Files | Tests | Coverage |
 |----------|-------|-------|----------|
 | **ABIs** | 1 | 34 | ABI structure validation |
-| **Config** | 2 | 30 | Network & contract configuration |
+| **Config** | 3 | 31 | Network, contracts, and Wagmi configuration |
 | **Lib/Utils** | 1 | 12 | Utility functions |
-| **Hooks** | 4 | 46 | Custom React hooks |
-| **UI Components** | 5 | 96 | Reusable UI components |
-| **Feature Components** | 3 | 17 | Feature interfaces |
-| **TOTAL** | **16** | **235** | ✅ All passing |
+| **Hooks** | 7 | 56 | Custom React hooks and transaction state |
+| **UI Components** | 8 | 125 | Reusable UI components and modal/error states |
+| **Layout/Web3** | 3 | 12 | Navbar, footer, and transaction notifications |
+| **Feature Components** | 3 | 22 | Feature interfaces and UI states |
+| **Providers/App** | 2 | 4 | App shell and provider composition |
+| **TOTAL** | **28** | **295** | ✅ All passing |
 
 ## Running Tests
 
