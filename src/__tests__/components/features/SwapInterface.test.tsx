@@ -1,45 +1,43 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SwapInterface } from "@/components/features/SwapInterface";
 import { mockAddresses } from "@/tests/test-utils";
 
+const mockUseSwap = vi.fn();
+const mockUseAccount = vi.fn();
+const mockToastSuccess = vi.fn();
+const approveMock = vi.fn();
+const swapMock = vi.fn();
+const resetStateMock = vi.fn();
+const setTokenInMock = vi.fn();
+
 vi.mock('../../../hooks/useSwap', () => ({
-  useSwap: vi.fn(() => ({
-    amountIn: '',
-    setAmountIn: vi.fn(),
-    tokenIn: 'token0',
-    setTokenIn: vi.fn(),
-    estimatedOutput: '0',
-    balance: BigInt(100 * 1e18),
-    hasLiquidity: true,
-    isApproved: false,
-    isApproving: false,
-    isConfirming: false,
-    isSubmitting: false,
-    isSuccess: false,
-    hash: undefined,
-    approve: vi.fn(),
-    swap: vi.fn(),
-    resetState: vi.fn(),
-  })),
+  useSwap: () => mockUseSwap(),
 }));
 
 vi.mock('wagmi', () => ({
-  useAccount: vi.fn(() => ({
-    address: mockAddresses.user,
-    isConnected: true,
-    chainId: 11155111,
-  })),
+  useAccount: () => mockUseAccount(),
   useWaitForTransactionReceipt: vi.fn(() => ({
     isLoading: false,
     isSuccess: false,
     isError: false,
     data: undefined,
   })),
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    success: (...args: unknown[]) => mockToastSuccess(...args),
+  },
+}));
+
+vi.mock('@/components/web3/TransactionToast', () => ({
+  TransactionMonitor: ({ hash }: { hash: string }) => <div data-testid="transaction-monitor">{hash}</div>,
 }));
 
 import { SettingsProvider } from "@/providers/SettingsProvider";
@@ -62,6 +60,37 @@ describe('SwapInterface', () => {
     token1Address: mockAddresses.tokenB,
   };
 
+  beforeEach(() => {
+    approveMock.mockReset();
+    swapMock.mockReset();
+    resetStateMock.mockReset();
+    setTokenInMock.mockReset();
+    mockToastSuccess.mockReset();
+    mockUseAccount.mockReturnValue({
+      address: mockAddresses.user,
+      isConnected: true,
+      chainId: 11155111,
+    });
+    mockUseSwap.mockReturnValue({
+      amountIn: '',
+      setAmountIn: vi.fn(),
+      tokenIn: 'token0',
+      setTokenIn: setTokenInMock,
+      estimatedOutput: '0',
+      balance: BigInt(100 * 1e18),
+      hasLiquidity: true,
+      isApproved: false,
+      isApproving: false,
+      isConfirming: false,
+      isSubmitting: false,
+      isSuccess: false,
+      hash: undefined,
+      approve: approveMock,
+      swap: swapMock,
+      resetState: resetStateMock,
+    });
+  });
+
   it('should render swap interface with title', () => {
     render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
     expect(screen.getByText('Swap Tokens')).toBeInTheDocument();
@@ -82,5 +111,47 @@ describe('SwapInterface', () => {
   it('should show approve button when not approved', () => {
     render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
     expect(screen.getByText('Approve Token')).toBeInTheDocument();
+  });
+
+  it('should render connect wallet prompt when user is disconnected', () => {
+    mockUseAccount.mockReturnValue({
+      address: undefined,
+      isConnected: false,
+      chainId: undefined,
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+    expect(screen.getByText('Connect your wallet to start swapping')).toBeInTheDocument();
+  });
+
+  it('should toggle input token when token select is clicked', async () => {
+    const user = userEvent.setup();
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    await user.click(screen.getByRole('button', { name: 'TOKEN0' }));
+    expect(setTokenInMock).toHaveBeenCalledWith('token1');
+  });
+
+  it('should show swap action and success state when already approved', () => {
+    mockUseSwap.mockReturnValue({
+      ...mockUseSwap(),
+      amountIn: '1',
+      estimatedOutput: '0.8',
+      isApproved: true,
+      isSuccess: true,
+      hash: '0xhash',
+      approve: approveMock,
+      swap: swapMock,
+      resetState: resetStateMock,
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('Swap')).toBeInTheDocument();
+    expect(screen.getByText('Minimum Received')).toBeInTheDocument();
+    expect(screen.getByText('✓ Transaction Confirmed')).toBeInTheDocument();
+    expect(screen.getByTestId('transaction-monitor')).toHaveTextContent('0xhash');
+    expect(mockToastSuccess).toHaveBeenCalledWith('Swap completed successfully!');
+    expect(resetStateMock).toHaveBeenCalledTimes(1);
   });
 });
