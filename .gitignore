@@ -41,3 +41,6 @@ cache
 
 # Contract addresses
 contract-addresses*.json
+
+# Coverage report
+coverage
