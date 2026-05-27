@@ -13,6 +13,11 @@ const mockUseAccount = vi.fn();
 const setModeMock = vi.fn();
 const resetStateMock = vi.fn();
 const toastSuccessMock = vi.fn();
+const approveMock = vi.fn();
+const addLiquidityMock = vi.fn();
+const removeLiquidityMock = vi.fn();
+const setAmount0Mock = vi.fn();
+const setAmount1Mock = vi.fn();
 
 vi.mock('../../../hooks/useLiquidity', () => ({
   useLiquidity: () => mockUseLiquidity(),
@@ -33,6 +38,34 @@ vi.mock('@/components/web3/TransactionToast', () => ({
 }));
 
 import { SettingsProvider } from "@/providers/SettingsProvider";
+
+const createLiquidityState = () => ({
+  mode: 'add',
+  setMode: setModeMock,
+  amount0: '',
+  setAmount0: setAmount0Mock,
+  amount1: '',
+  setAmount1: setAmount1Mock,
+  expectedLP: '0',
+  expectedRemove0: '0',
+  expectedRemove1: '0',
+  reserve0: BigInt(1000 * 1e18),
+  reserve1: BigInt(1000 * 1e18),
+  totalSupply: BigInt(100 * 1e18),
+  token0Balance: BigInt(100 * 1e18),
+  token1Balance: BigInt(100 * 1e18),
+  lpBalance: BigInt(100 * 1e18),
+  isApproved: false,
+  isApproving: false,
+  isConfirming: false,
+  isSubmitting: false,
+  isSuccess: false,
+  hash: undefined,
+  addLiquidity: addLiquidityMock,
+  removeLiquidity: removeLiquidityMock,
+  approve: approveMock,
+  resetState: resetStateMock,
+});
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -56,38 +89,17 @@ describe('LiquidityProvider', () => {
     setModeMock.mockReset();
     resetStateMock.mockReset();
     toastSuccessMock.mockReset();
+    approveMock.mockReset();
+    addLiquidityMock.mockReset();
+    removeLiquidityMock.mockReset();
+    setAmount0Mock.mockReset();
+    setAmount1Mock.mockReset();
     mockUseAccount.mockReturnValue({
       address: mockAddresses.user,
       isConnected: true,
       chainId: 11155111,
     });
-    mockUseLiquidity.mockReturnValue({
-      mode: 'add',
-      setMode: setModeMock,
-      amount0: '',
-      setAmount0: vi.fn(),
-      amount1: '',
-      setAmount1: vi.fn(),
-      expectedLP: '0',
-      expectedRemove0: '0',
-      expectedRemove1: '0',
-      reserve0: BigInt(1000 * 1e18),
-      reserve1: BigInt(1000 * 1e18),
-      totalSupply: BigInt(100 * 1e18),
-      token0Balance: BigInt(100 * 1e18),
-      token1Balance: BigInt(100 * 1e18),
-      lpBalance: BigInt(100 * 1e18),
-      isApproved: false,
-      isApproving: false,
-      isConfirming: false,
-      isSubmitting: false,
-      isSuccess: false,
-      hash: undefined,
-      addLiquidity: vi.fn(),
-      removeLiquidity: vi.fn(),
-      approve: vi.fn(),
-      resetState: resetStateMock,
-    });
+    mockUseLiquidity.mockReturnValue(createLiquidityState());
   });
 
   it('should render liquidity provider interface with title', () => {
@@ -132,7 +144,7 @@ describe('LiquidityProvider', () => {
 
   it('should render remove liquidity state and confirmation message', () => {
     mockUseLiquidity.mockReturnValue({
-      ...mockUseLiquidity(),
+      ...createLiquidityState(),
       mode: 'remove',
       amount0: '1',
       expectedRemove0: '0.4',
@@ -153,7 +165,7 @@ describe('LiquidityProvider', () => {
 
   it('should show success toast and reset state after successful add liquidity', () => {
     mockUseLiquidity.mockReturnValue({
-      ...mockUseLiquidity(),
+      ...createLiquidityState(),
       isSuccess: true,
       mode: 'add',
       resetState: resetStateMock,
@@ -163,5 +175,65 @@ describe('LiquidityProvider', () => {
 
     expect(toastSuccessMock).toHaveBeenCalledWith('Liquidity added!');
     expect(resetStateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call approve in add mode when approval button is clicked', async () => {
+    const user = userEvent.setup();
+    mockUseLiquidity.mockReturnValue({
+      ...createLiquidityState(),
+      amount0: '1',
+      amount1: '2',
+      approve: approveMock,
+    });
+
+    render(<LiquidityProvider {...defaultProps} />, { wrapper: createWrapper() });
+
+    await user.click(screen.getByText('🔓 Approve Both Tokens'));
+    expect(approveMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call addLiquidity when approved add-mode action is clicked', async () => {
+    const user = userEvent.setup();
+    mockUseLiquidity.mockReturnValue({
+      ...createLiquidityState(),
+      amount0: '1',
+      amount1: '2',
+      isApproved: true,
+      addLiquidity: addLiquidityMock,
+    });
+
+    render(<LiquidityProvider {...defaultProps} />, { wrapper: createWrapper() });
+
+    await user.click(screen.getByText('💧 Add Liquidity'));
+    expect(addLiquidityMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call removeLiquidity in remove mode when action is clicked', async () => {
+    const user = userEvent.setup();
+    mockUseLiquidity.mockReturnValue({
+      ...createLiquidityState(),
+      mode: 'remove',
+      amount0: '1',
+      isApproved: true,
+      removeLiquidity: removeLiquidityMock,
+    });
+
+    render(<LiquidityProvider {...defaultProps} />, { wrapper: createWrapper() });
+
+    await user.click(screen.getByText('🔥 Remove Liquidity'));
+    expect(removeLiquidityMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should render token approval indicators in add mode', () => {
+    mockUseLiquidity.mockReturnValue({
+      ...createLiquidityState(),
+      token0Balance: 0n,
+      token1Balance: BigInt(5e18),
+    });
+
+    render(<LiquidityProvider {...defaultProps} />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('○ Token 0')).toBeInTheDocument();
+    expect(screen.getByText('✓ Token 1')).toBeInTheDocument();
   });
 });

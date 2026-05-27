@@ -2,9 +2,9 @@
 
 ## Overview
 
-This project has a comprehensive frontend test suite with **28 Vitest files** and **295 tests** covering unit tests, integration tests, hooks, providers, and component behavior for the Staking DApp application.
+This project has a comprehensive frontend test suite with **28 Vitest files** and **305 tests** covering unit tests, integration tests, hooks, providers, and component behavior for the Staking DApp application.
 
-**Current Status:** ✅ All 295 frontend tests passing
+**Current Status:** ✅ All 305 frontend tests passing
 
 ## Test Structure
 
@@ -55,14 +55,14 @@ src/__tests__/
 | Category | Files | Tests | Coverage |
 |----------|-------|-------|----------|
 | **ABIs** | 1 | 34 | ABI structure validation |
-| **Config** | 3 | 31 | Network, contracts, and Wagmi configuration |
+| **Config** | 3 | 33 | Network, contracts, and Wagmi configuration |
 | **Lib/Utils** | 1 | 12 | Utility functions |
 | **Hooks** | 7 | 56 | Custom React hooks and transaction state |
 | **UI Components** | 8 | 125 | Reusable UI components and modal/error states |
-| **Layout/Web3** | 3 | 12 | Navbar, footer, and transaction notifications |
-| **Feature Components** | 3 | 22 | Feature interfaces and UI states |
+| **Layout/Web3** | 3 | 9 | Navbar, footer, and transaction notifications |
+| **Feature Components** | 3 | 32 | Feature interfaces and UI states |
 | **Providers/App** | 2 | 4 | App shell and provider composition |
-| **TOTAL** | **28** | **295** | ✅ All passing |
+| **TOTAL** | **28** | **305** | ✅ All passing |
 
 ## Running Tests
 

@@ -15,6 +15,7 @@ const approveMock = vi.fn();
 const swapMock = vi.fn();
 const resetStateMock = vi.fn();
 const setTokenInMock = vi.fn();
+const setAmountInMock = vi.fn();
 
 vi.mock('../../../hooks/useSwap', () => ({
   useSwap: () => mockUseSwap(),
@@ -42,6 +43,25 @@ vi.mock('@/components/web3/TransactionToast', () => ({
 
 import { SettingsProvider } from "@/providers/SettingsProvider";
 
+const createSwapState = () => ({
+  amountIn: '',
+  setAmountIn: setAmountInMock,
+  tokenIn: 'token0',
+  setTokenIn: setTokenInMock,
+  estimatedOutput: '0',
+  balance: BigInt(100 * 1e18),
+  hasLiquidity: true,
+  isApproved: false,
+  isApproving: false,
+  isConfirming: false,
+  isSubmitting: false,
+  isSuccess: false,
+  hash: undefined,
+  approve: approveMock,
+  swap: swapMock,
+  resetState: resetStateMock,
+});
+
 const createWrapper = () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
@@ -65,30 +85,14 @@ describe('SwapInterface', () => {
     swapMock.mockReset();
     resetStateMock.mockReset();
     setTokenInMock.mockReset();
+    setAmountInMock.mockReset();
     mockToastSuccess.mockReset();
     mockUseAccount.mockReturnValue({
       address: mockAddresses.user,
       isConnected: true,
       chainId: 11155111,
     });
-    mockUseSwap.mockReturnValue({
-      amountIn: '',
-      setAmountIn: vi.fn(),
-      tokenIn: 'token0',
-      setTokenIn: setTokenInMock,
-      estimatedOutput: '0',
-      balance: BigInt(100 * 1e18),
-      hasLiquidity: true,
-      isApproved: false,
-      isApproving: false,
-      isConfirming: false,
-      isSubmitting: false,
-      isSuccess: false,
-      hash: undefined,
-      approve: approveMock,
-      swap: swapMock,
-      resetState: resetStateMock,
-    });
+    mockUseSwap.mockReturnValue(createSwapState());
   });
 
   it('should render swap interface with title', () => {
@@ -134,7 +138,7 @@ describe('SwapInterface', () => {
 
   it('should show swap action and success state when already approved', () => {
     mockUseSwap.mockReturnValue({
-      ...mockUseSwap(),
+      ...createSwapState(),
       amountIn: '1',
       estimatedOutput: '0.8',
       isApproved: true,
@@ -153,5 +157,45 @@ describe('SwapInterface', () => {
     expect(screen.getByTestId('transaction-monitor')).toHaveTextContent('0xhash');
     expect(mockToastSuccess).toHaveBeenCalledWith('Swap completed successfully!');
     expect(resetStateMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call approve when approve button is clicked', async () => {
+    const user = userEvent.setup();
+    mockUseSwap.mockReturnValue({
+      ...createSwapState(),
+      amountIn: '1',
+      approve: approveMock,
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    await user.click(screen.getByText('Approve Token'));
+    expect(approveMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should call swap when approved action button is clicked', async () => {
+    const user = userEvent.setup();
+    mockUseSwap.mockReturnValue({
+      ...createSwapState(),
+      amountIn: '1',
+      estimatedOutput: '0.8',
+      isApproved: true,
+      swap: swapMock,
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    await user.click(screen.getByText('Swap'));
+    expect(swapMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('should render insufficient liquidity state when pool has no liquidity', () => {
+    mockUseSwap.mockReturnValue({
+      ...createSwapState(),
+      hasLiquidity: false,
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+    expect(screen.getByText('Insufficient Liquidity')).toBeInTheDocument();
   });
 });
