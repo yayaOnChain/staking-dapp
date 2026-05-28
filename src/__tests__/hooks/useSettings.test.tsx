@@ -47,4 +47,42 @@ describe('useSettings', () => {
     
     expect(result.current.slippageTolerance).toBe(0);
   });
+
+  it('should throw error when used outside SettingsProvider', () => {
+    expect(() => {
+      renderHook(() => useSettings());
+    }).toThrow('useSettings must be used within a SettingsProvider');
+  });
+
+  it('should allow setting slippage tolerance to negative value', () => {
+    const { result } = renderHook(() => useSettings(), { wrapper: createWrapper() });
+    
+    act(() => {
+      result.current.setSlippageTolerance(-1);
+    });
+    
+    expect(result.current.slippageTolerance).toBe(-1);
+  });
+
+  it('should allow setting slippage tolerance to a large value', () => {
+    const { result } = renderHook(() => useSettings(), { wrapper: createWrapper() });
+    
+    act(() => {
+      result.current.setSlippageTolerance(100);
+    });
+    
+    expect(result.current.slippageTolerance).toBe(100);
+  });
+
+  it('should persist updated value across renders', () => {
+    const { result, rerender } = renderHook(() => useSettings(), { wrapper: createWrapper() });
+    
+    act(() => {
+      result.current.setSlippageTolerance(1.5);
+    });
+    
+    rerender();
+    
+    expect(result.current.slippageTolerance).toBe(1.5);
+  });
 });
