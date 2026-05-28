@@ -8,7 +8,7 @@ import { mockAddresses } from "@/tests/test-utils";
 import { useLiquidity } from "@/hooks/useLiquidity";
 import { TransactionProvider } from "@/providers/TransactionProvider";
 import { SettingsProvider } from "@/providers/SettingsProvider";
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, type UseWaitForTransactionReceiptReturnType } from 'wagmi';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { LIQUIDITY_POOL_ABI } from "@/abis";
@@ -102,10 +102,10 @@ const successQueryResult = {
 const errorQueryResult = {
   data: undefined,
   dataUpdatedAt: 0,
-  error: { name: 'TransactionFailedError', message: 'tx failed', shortMessage: 'tx failed' },
+  error: new Error('tx failed'),
   errorUpdatedAt: Date.now(),
   failureCount: 1,
-  failureReason: { name: 'TransactionFailedError', message: 'tx failed', shortMessage: 'tx failed' },
+  failureReason: new Error('tx failed'),
   errorUpdateCount: 1,
   isError: true,
   isFetched: true,
@@ -165,14 +165,14 @@ describe('useLiquidity', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.mocked(useReadContract).mockReturnValue(baseQueryResult as never);
-    vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn() as never);
-    vi.mocked(useWaitForTransactionReceipt).mockReturnValue(baseQueryResult as never);
+    vi.mocked(useReadContract).mockReturnValue(baseQueryResult);
+    vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn());
+    vi.mocked(useWaitForTransactionReceipt).mockReturnValue(baseQueryResult);
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-    vi.spyOn(qc, 'invalidateQueries').mockImplementation((() => Promise.resolve()) as never);
-    vi.spyOn(qc, 'setQueryData').mockImplementation((() => undefined) as never);
-    vi.spyOn(qc, 'getQueryData').mockImplementation((() => undefined) as never);
-    vi.spyOn(qc, 'refetchQueries').mockImplementation((() => Promise.resolve()) as never);
+    vi.spyOn(qc, 'invalidateQueries').mockImplementation((() => Promise.resolve()));
+    vi.spyOn(qc, 'setQueryData').mockImplementation((() => undefined));
+    vi.spyOn(qc, 'getQueryData').mockImplementation((() => undefined));
+    vi.spyOn(qc, 'refetchQueries').mockImplementation((() => Promise.resolve()));
     vi.mocked(useQueryClient).mockReturnValue(qc);
   });
 
@@ -290,7 +290,7 @@ describe('useLiquidity', () => {
 
     it('should reset hash and isSubmitting when resetState is called', async () => {
       const writeContractAsyncSpy = vi.fn().mockResolvedValue('0xSuccessHash');
-      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy) as never);
+      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy));
 
       const { result } = renderHook(() => useLiquidity(defaultProps), {
         wrapper: createWrapper(),
@@ -318,7 +318,7 @@ describe('useLiquidity', () => {
 
   describe('expectedLP calculation', () => {
     beforeEach(() => {
-      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(POOL_DATA) as never);
+      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(POOL_DATA));
     });
 
     it('should return "0" when amounts are empty even with pool data', () => {
@@ -357,7 +357,7 @@ describe('useLiquidity', () => {
 
   describe('initial liquidity (totalSupply === 0)', () => {
     beforeEach(() => {
-      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(0n) as never);
+      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(0n));
     });
 
     it('should return amount0 as expectedLP when totalSupply is 0', () => {
@@ -375,7 +375,7 @@ describe('useLiquidity', () => {
 
   describe('expectedRemove calculation', () => {
     beforeEach(() => {
-      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(POOL_DATA) as never);
+      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(POOL_DATA));
     });
 
     it('should return "0" when amount0 is empty', () => {
@@ -418,7 +418,7 @@ describe('useLiquidity', () => {
 
     it('should handle approval error gracefully', async () => {
       const writeContractAsyncSpy = vi.fn().mockRejectedValue(new Error('User rejected'));
-      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy) as never);
+      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy));
 
       const { result } = renderHook(() => useLiquidity(defaultProps), {
         wrapper: createWrapper(),
@@ -433,6 +433,62 @@ describe('useLiquidity', () => {
       });
 
       expect(toast.error).toHaveBeenCalledWith('Approval failed');
+    });
+
+    it('should skip approval when tokens are already approved', async () => {
+      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(100n));
+      const writeContractAsyncSpy = vi.fn().mockResolvedValue('0xTxHash');
+      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy));
+
+      const { result } = renderHook(() => useLiquidity(defaultProps), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        await result.current.approve();
+      });
+
+      expect(toast.loading).toHaveBeenCalledWith('Approving tokens...');
+      expect(toast.dismiss).toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith('Approval transaction(s) sent!');
+      expect(writeContractAsyncSpy).not.toHaveBeenCalled();
+    });
+
+    it('should skip toast dismiss on approve success when toastIdRef is null', async () => {
+      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(100n));
+      vi.mocked(toast.loading).mockReturnValue(null as unknown as string | number);
+
+      const { result } = renderHook(() => useLiquidity(defaultProps), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        await result.current.approve();
+      });
+
+      expect(toast.success).toHaveBeenCalledWith('Approval transaction(s) sent!');
+      expect(toast.dismiss).not.toHaveBeenCalled();
+    });
+
+    it('should skip toast dismiss on approve error when toastIdRef is null', async () => {
+      vi.mocked(toast.loading).mockReturnValue(null as unknown as string | number);
+      const writeContractAsyncSpy = vi.fn().mockRejectedValue(new Error('User rejected'));
+      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy));
+
+      const { result } = renderHook(() => useLiquidity(defaultProps), {
+        wrapper: createWrapper(),
+      });
+
+      await act(async () => {
+        try {
+          await result.current.approve();
+        } catch {
+          // expected
+        }
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Approval failed');
+      expect(toast.dismiss).not.toHaveBeenCalled();
     });
   });
 
@@ -473,7 +529,7 @@ describe('useLiquidity', () => {
 
     it('should submit addLiquidity transaction successfully', async () => {
       const writeContractAsyncSpy = vi.fn().mockResolvedValue('0xSuccessHash');
-      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy) as never);
+      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy));
 
       const { result } = renderHook(() => useLiquidity(defaultProps), {
         wrapper: createWrapper(),
@@ -501,7 +557,7 @@ describe('useLiquidity', () => {
 
     it('should handle addLiquidity error', async () => {
       const writeContractAsyncSpy = vi.fn().mockRejectedValue(new Error('Tx failed'));
-      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy) as never);
+      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy));
 
       const { result } = renderHook(() => useLiquidity(defaultProps), {
         wrapper: createWrapper(),
@@ -523,6 +579,33 @@ describe('useLiquidity', () => {
       expect(toast.error).toHaveBeenCalledWith('Failed to add liquidity');
       expect(result.current.isSubmitting).toBe(false);
     });
+
+    it('should skip toast dismiss on addLiquidity error when toastIdRef is null', async () => {
+      vi.mocked(toast.loading).mockReturnValue(null as unknown as string | number);
+      const writeContractAsyncSpy = vi.fn().mockRejectedValue(new Error('Tx failed'));
+      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy));
+
+      const { result } = renderHook(() => useLiquidity(defaultProps), {
+        wrapper: createWrapper(),
+      });
+
+      act(() => {
+        result.current.setAmount0('100');
+        result.current.setAmount1('200');
+      });
+
+      await act(async () => {
+        try {
+          await result.current.addLiquidity();
+        } catch {
+          // expected
+        }
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Failed to add liquidity');
+      expect(toast.dismiss).not.toHaveBeenCalled();
+      expect(result.current.isSubmitting).toBe(false);
+    });
   });
 
   describe('removeLiquidity', () => {
@@ -541,7 +624,7 @@ describe('useLiquidity', () => {
 
     it('should submit removeLiquidity transaction successfully', async () => {
       const writeContractAsyncSpy = vi.fn().mockResolvedValue('0xRemoveHash');
-      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy) as never);
+      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy));
 
       const { result } = renderHook(() => useLiquidity(defaultProps), {
         wrapper: createWrapper(),
@@ -568,7 +651,7 @@ describe('useLiquidity', () => {
 
     it('should handle removeLiquidity error', async () => {
       const writeContractAsyncSpy = vi.fn().mockRejectedValue(new Error('Remove failed'));
-      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy) as never);
+      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy));
 
       const { result } = renderHook(() => useLiquidity(defaultProps), {
         wrapper: createWrapper(),
@@ -589,6 +672,32 @@ describe('useLiquidity', () => {
       expect(toast.error).toHaveBeenCalledWith('Failed to remove liquidity');
       expect(result.current.isSubmitting).toBe(false);
     });
+
+    it('should skip toast dismiss on removeLiquidity error when toastIdRef is null', async () => {
+      vi.mocked(toast.loading).mockReturnValue(null as unknown as string | number);
+      const writeContractAsyncSpy = vi.fn().mockRejectedValue(new Error('Remove failed'));
+      vi.mocked(useWriteContract).mockReturnValue(createWriteContractReturn(writeContractAsyncSpy));
+
+      const { result } = renderHook(() => useLiquidity(defaultProps), {
+        wrapper: createWrapper(),
+      });
+
+      act(() => {
+        result.current.setAmount0('50');
+      });
+
+      await act(async () => {
+        try {
+          await result.current.removeLiquidity();
+        } catch {
+          // expected
+        }
+      });
+
+      expect(toast.error).toHaveBeenCalledWith('Failed to remove liquidity');
+      expect(toast.dismiss).not.toHaveBeenCalled();
+      expect(result.current.isSubmitting).toBe(false);
+    });
   });
 
   describe('transaction state flags', () => {
@@ -599,7 +708,7 @@ describe('useLiquidity', () => {
         isPending: true,
         fetchStatus: 'fetching',
         isFetching: true,
-      } as never);
+      });
 
       const { result } = renderHook(() => useLiquidity(defaultProps), {
         wrapper: createWrapper(),
@@ -609,7 +718,7 @@ describe('useLiquidity', () => {
     });
 
     it('should reflect isSuccess from useWaitForTransactionReceipt', () => {
-      vi.mocked(useWaitForTransactionReceipt).mockReturnValue(successQueryResult as never);
+      vi.mocked(useWaitForTransactionReceipt).mockReturnValue(successQueryResult);
 
       const { result } = renderHook(() => useLiquidity(defaultProps), {
         wrapper: createWrapper(),
@@ -619,7 +728,7 @@ describe('useLiquidity', () => {
     });
 
     it('should reflect isConfirming false and isError true on tx failure', () => {
-      vi.mocked(useWaitForTransactionReceipt).mockReturnValue(errorQueryResult as never);
+      vi.mocked(useWaitForTransactionReceipt).mockReturnValue(errorQueryResult as unknown as UseWaitForTransactionReceiptReturnType);
 
       const { result } = renderHook(() => useLiquidity(defaultProps), {
         wrapper: createWrapper(),
@@ -632,7 +741,7 @@ describe('useLiquidity', () => {
 
   describe('transaction effects', () => {
     it('should update transaction status on success when hash is set and isSuccess is true', () => {
-      vi.mocked(useWaitForTransactionReceipt).mockReturnValue(successQueryResult as never);
+      vi.mocked(useWaitForTransactionReceipt).mockReturnValue(successQueryResult);
 
       const { result } = renderHook(() => useLiquidity(defaultProps), {
         wrapper: createWrapper(),
@@ -642,22 +751,23 @@ describe('useLiquidity', () => {
     });
 
     it('should call updateTransactionStatus on add liquidity success and execute query predicate', async () => {
-      vi.mocked(useWaitForTransactionReceipt).mockReturnValue(successQueryResult as never);
-      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(POOL_DATA) as never);
+      vi.mocked(useWaitForTransactionReceipt).mockReturnValue(successQueryResult);
+      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(POOL_DATA));
 
       const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-      const invalidateMock = vi.fn((options: { predicate?: (query: { queryKey: unknown[] }) => boolean }) => {
-        if (options.predicate) {
+      const invalidateMock = vi.fn((filters: unknown) => {
+        const options = filters as { predicate?: (query: { queryKey: unknown[] }) => boolean } | undefined;
+        if (options?.predicate) {
           options.predicate({ queryKey: ['balanceOf', { address: mockAddresses.pool }] });
           options.predicate({ queryKey: ['allowance', { address: mockAddresses.tokenA }] });
           options.predicate({ queryKey: ['totalSupply'] });
         }
         return Promise.resolve();
       });
-      vi.spyOn(qc, 'invalidateQueries').mockImplementation(invalidateMock as never);
-      vi.spyOn(qc, 'setQueryData').mockImplementation((() => undefined) as never);
-      vi.spyOn(qc, 'getQueryData').mockImplementation((() => undefined) as never);
-      vi.spyOn(qc, 'refetchQueries').mockImplementation((() => Promise.resolve()) as never);
+      vi.spyOn(qc, 'invalidateQueries').mockImplementation(invalidateMock);
+      vi.spyOn(qc, 'setQueryData').mockImplementation((() => undefined));
+      vi.spyOn(qc, 'getQueryData').mockImplementation((() => undefined));
+      vi.spyOn(qc, 'refetchQueries').mockImplementation((() => Promise.resolve()));
       vi.mocked(useQueryClient).mockReturnValue(qc);
 
       const { result } = renderHook(() => useLiquidity(defaultProps), {
@@ -677,15 +787,8 @@ describe('useLiquidity', () => {
     });
 
     it('should call updateTransactionStatus with failed on tx error', async () => {
-      vi.mocked(useWaitForTransactionReceipt).mockReturnValue(errorQueryResult as never);
-      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(POOL_DATA) as never);
-
-      const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-      vi.spyOn(qc, 'invalidateQueries').mockImplementation((() => Promise.resolve()) as never);
-      vi.spyOn(qc, 'setQueryData').mockImplementation((() => undefined) as never);
-      vi.spyOn(qc, 'getQueryData').mockImplementation((() => undefined) as never);
-      vi.spyOn(qc, 'refetchQueries').mockImplementation((() => Promise.resolve()) as never);
-      vi.mocked(useQueryClient).mockReturnValue(qc);
+      vi.mocked(useWaitForTransactionReceipt).mockReturnValue(errorQueryResult as unknown as UseWaitForTransactionReceiptReturnType);
+      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(POOL_DATA));
 
       const { result } = renderHook(() => useLiquidity(defaultProps), {
         wrapper: createWrapper(),
@@ -701,6 +804,40 @@ describe('useLiquidity', () => {
       });
 
       expect(mockUpdateTransactionStatus).toHaveBeenCalledWith('0xTxHash', 'failed');
+    });
+
+    it('should handle invalidateQueries predicate with unrelated address', async () => {
+      vi.mocked(useWaitForTransactionReceipt).mockReturnValue(successQueryResult);
+      vi.mocked(useReadContract).mockReturnValue(createSuccessReadReturn(POOL_DATA));
+
+      const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+      const invalidateMock = vi.fn((filters: unknown) => {
+        const options = filters as { predicate?: (query: { queryKey: unknown[] }) => boolean } | undefined;
+        if (options?.predicate) {
+          options.predicate({ queryKey: ['balanceOf', { address: '0x0000000000000000000000000000000000000001' }] });
+        }
+        return Promise.resolve();
+      });
+      vi.spyOn(qc, 'invalidateQueries').mockImplementation(invalidateMock);
+      vi.spyOn(qc, 'setQueryData').mockImplementation((() => undefined));
+      vi.spyOn(qc, 'getQueryData').mockImplementation((() => undefined));
+      vi.spyOn(qc, 'refetchQueries').mockImplementation((() => Promise.resolve()));
+      vi.mocked(useQueryClient).mockReturnValue(qc);
+
+      const { result } = renderHook(() => useLiquidity(defaultProps), {
+        wrapper: createWrapper(),
+      });
+
+      act(() => {
+        result.current.setAmount0('100');
+        result.current.setAmount1('200');
+      });
+
+      await act(async () => {
+        await result.current.addLiquidity();
+      });
+
+      expect(mockUpdateTransactionStatus).toHaveBeenCalledWith('0xTxHash', 'success');
     });
   });
 
