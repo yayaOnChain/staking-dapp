@@ -173,4 +173,15 @@ describe('useTransactions', () => {
       status: 'pending',
     });
   });
+
+  it('should throw an error when used outside TransactionProvider', () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    expect(() => renderHook(() => useTransactions())).toThrow(
+      'useTransactions must be used within a TransactionProvider'
+    );
+
+    consoleErrorSpy.mockRestore();
+  });
+
 });
