@@ -3,6 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { createRef } from 'react';
 import { StatBox } from "@/components/ui/StatBox";
 
 describe('StatBox', () => {
@@ -35,24 +36,31 @@ describe('StatBox', () => {
       render(<StatBox label="Default" value="100" />);
       const container = screen.getByText('Default').parentElement;
       expect(container?.className).toMatch(/bg-gray-900/);
+      expect(container?.className).toMatch(/border-gray-700/);
     });
 
     it('should apply success variant styles', () => {
       render(<StatBox label="Success" value="100" variant="success" />);
       const value = screen.getByText('100');
       expect(value.className).toMatch(/text-green-400/);
+      const container = screen.getByText('Success').parentElement;
+      expect(container?.className).toMatch(/border-green-700/);
     });
 
     it('should apply warning variant styles', () => {
       render(<StatBox label="Warning" value="100" variant="warning" />);
       const value = screen.getByText('100');
       expect(value.className).toMatch(/text-yellow-400/);
+      const container = screen.getByText('Warning').parentElement;
+      expect(container?.className).toMatch(/border-yellow-700/);
     });
 
     it('should apply danger variant styles', () => {
       render(<StatBox label="Danger" value="100" variant="danger" />);
       const value = screen.getByText('100');
       expect(value.className).toMatch(/text-red-400/);
+      const container = screen.getByText('Danger').parentElement;
+      expect(container?.className).toMatch(/border-red-700/);
     });
   });
 
@@ -90,6 +98,23 @@ describe('StatBox', () => {
       render(<StatBox label="Tokens" value="1,234.567" />);
       expect(screen.getByText('1,234.567')).toBeInTheDocument();
     });
+
+    it('should display ReactNode as value', () => {
+      render(<StatBox label="Node" value={<span data-testid="node-value">node</span>} />);
+      expect(screen.getByTestId('node-value')).toBeInTheDocument();
+    });
+
+    it('should apply small text for values longer than 10 characters', () => {
+      render(<StatBox label="Long" value="12345678901" />);
+      const value = screen.getByText('12345678901');
+      expect(value.className).toContain('text-sm');
+    });
+
+    it('should apply extra small text for values longer than 20 characters', () => {
+      render(<StatBox label="Very Long" value="123456789012345678901" />);
+      const value = screen.getByText('123456789012345678901');
+      expect(value.className).toContain('text-xs');
+    });
   });
 
   describe('label styling', () => {
@@ -114,6 +139,27 @@ describe('StatBox', () => {
     it('should support data attributes', () => {
       render(<StatBox label="Test" value="100" data-testid="stat-box" />);
       expect(screen.getByTestId('stat-box')).toBeInTheDocument();
+    });
+  });
+
+  describe('ref forwarding', () => {
+    it('should forward ref to the root element', () => {
+      const ref = createRef<HTMLDivElement>();
+      render(<StatBox label="Ref" value="test" ref={ref} />);
+      expect(ref.current).toBeInstanceOf(HTMLDivElement);
+    });
+  });
+
+  describe('displayName', () => {
+    it('should have displayName set', () => {
+      expect(StatBox.displayName).toBe('StatBox');
+    });
+  });
+
+  describe('additional props', () => {
+    it('should pass additional HTML attributes to root element', () => {
+      render(<StatBox label="Test" value="100" title="statbox-tooltip" />);
+      expect(screen.getByTitle('statbox-tooltip')).toBeInTheDocument();
     });
   });
 
