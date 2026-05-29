@@ -88,8 +88,6 @@ const DashboardContent = () => {
             />
           </motion.div>
         );
-      default:
-        return null;
     }
   };
 
