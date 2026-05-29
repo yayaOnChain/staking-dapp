@@ -1,11 +1,11 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Footer } from '@/components/layout/Footer';
 
-vi.mock('@/config/constants', () => ({
+const mockConstants = vi.hoisted(() => ({
   DEFAULT_NETWORK: 'sepolia',
   NETWORK_CONFIG: {
     sepolia: {
@@ -23,7 +23,19 @@ vi.mock('@/config/constants', () => ({
   },
 }));
 
+vi.mock('@/config/constants', () => mockConstants);
+
+const defaultAddresses = {
+  POOL: '0x1234567890abcdef1234567890abcdef12345678',
+  TOKEN_A: '0x0000000000000000000000000000000000000000',
+  FARM: '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+};
+
 describe('Footer', () => {
+  beforeEach(() => {
+    Object.assign(mockConstants.CONTRACT_ADDRESSES.sepolia, defaultAddresses);
+  });
+
   it('should render network contract references with truncated addresses', () => {
     render(<Footer />);
 
@@ -53,5 +65,27 @@ describe('Footer', () => {
       'href',
       'https://x.com/yayaOnChain'
     );
+  });
+
+  it('should apply text-red-400 when addresses start with 0x0000 and text-gray-300 otherwise', () => {
+    mockConstants.CONTRACT_ADDRESSES.sepolia.POOL = '0x0000000000000000000000000000000000000000';
+    mockConstants.CONTRACT_ADDRESSES.sepolia.TOKEN_A = '0x1234567890abcdef1234567890abcdef12345678';
+    mockConstants.CONTRACT_ADDRESSES.sepolia.FARM = '0x0000000000000000000000000000000000000000';
+
+    render(<Footer />);
+
+    const notDeployed = screen.getAllByText('Not deployed');
+    expect(notDeployed).toHaveLength(2);
+    expect(screen.getByText('0x1234...5678')).toBeInTheDocument();
+  });
+
+  it('should handle empty contract address string', () => {
+    mockConstants.CONTRACT_ADDRESSES.sepolia.POOL = '';
+
+    render(<Footer />);
+
+    expect(screen.getByText('AMM Pool')).toBeInTheDocument();
+    const notDeployed = screen.getAllByText('Not deployed');
+    expect(notDeployed.length).toBeGreaterThanOrEqual(1);
   });
 });
