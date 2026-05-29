@@ -80,16 +80,30 @@ describe('TransactionMonitor', () => {
     });
   });
 
-  it('should remain silent when there is no success or error state', () => {
+  it('should fallback to unknown error message when error is null', () => {
     mockUseWaitForTransactionReceipt.mockReturnValue({
       isSuccess: false,
+      isError: true,
+      error: null,
+    });
+
+    render(<TransactionMonitor hash={'0xdeadbeef' as `0x${string}`} />);
+
+    expect(errorToast).toHaveBeenCalledWith('Transaction Failed', {
+      description: 'Unknown error occurred',
+    });
+  });
+
+  it('should handle success without onSuccess callback', () => {
+    mockUseWaitForTransactionReceipt.mockReturnValue({
+      isSuccess: true,
       isError: false,
       error: null,
     });
 
-    render(<TransactionMonitor hash={undefined} />);
+    render(<TransactionMonitor hash={'0xdeadbeef' as `0x${string}`} />);
 
-    expect(successToast).not.toHaveBeenCalled();
+    expect(successToast).toHaveBeenCalledTimes(1);
     expect(errorToast).not.toHaveBeenCalled();
   });
 });
