@@ -54,6 +54,37 @@ describe('ErrorBoundary', () => {
     expect(reloadMock).toHaveBeenCalledTimes(1);
   });
 
+  it('should render default fallback for error without message', () => {
+    const ThrowErrorNoMessage = () => {
+      throw new Error();
+    };
+
+    render(
+      <ErrorBoundary>
+        <ThrowErrorNoMessage />
+      </ErrorBoundary>
+    );
+
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+    expect(screen.getByText('An unexpected error occurred')).toBeInTheDocument();
+  });
+
+  it('should log error to console in componentDidCatch', () => {
+    const consoleSpy = vi.spyOn(console, 'error');
+
+    render(
+      <ErrorBoundary>
+        <ThrowError />
+      </ErrorBoundary>
+    );
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'ErrorBoundary caught an error:',
+      expect.any(Error),
+      expect.any(Object)
+    );
+  });
+
   it('should render custom fallback when provided', () => {
     render(
       <ErrorBoundary fallback={<div>Custom fallback</div>}>
