@@ -200,4 +200,37 @@ describe('YieldFarmDashboard', () => {
     render(<YieldFarmDashboard {...defaultProps} />, { wrapper: createWrapper() });
     expect(screen.getByText('🎁 Harvest Rewards')).toBeDisabled();
   });
+
+  it('should call setAmount when user types in the input', async () => {
+    const user = userEvent.setup();
+    mockUseYieldFarm.mockReturnValue({
+      ...createYieldFarmState(),
+      isApproved: true,
+    });
+
+    render(<YieldFarmDashboard {...defaultProps} />, { wrapper: createWrapper() });
+    const input = screen.getByPlaceholderText('0.0');
+    await user.type(input, '5');
+    expect(setAmountMock).toHaveBeenCalled();
+  });
+
+  it('should handle undefined lpBalance gracefully', () => {
+    mockUseYieldFarm.mockReturnValue({
+      ...createYieldFarmState(),
+      lpBalance: undefined,
+    });
+
+    render(<YieldFarmDashboard {...defaultProps} />, { wrapper: createWrapper() });
+    expect(screen.getByText('Yield Farm')).toBeInTheDocument();
+  });
+
+  it('should handle undefined totalStaked gracefully', () => {
+    mockUseYieldFarm.mockReturnValue({
+      ...createYieldFarmState(),
+      totalStaked: undefined,
+    });
+
+    render(<YieldFarmDashboard {...defaultProps} />, { wrapper: createWrapper() });
+    expect(screen.getByText('Yield Farm')).toBeInTheDocument();
+  });
 });
