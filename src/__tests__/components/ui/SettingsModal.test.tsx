@@ -107,4 +107,60 @@ describe('SettingsModal', () => {
     await user.click(screen.getByRole('button', { name: 'Close settings' }));
     expect(onClose).toHaveBeenCalledTimes(2);
   });
+
+  it('should close modal when Escape key is pressed', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    renderWithProviders(<SettingsModal isOpen onClose={onClose} />);
+
+    const input = screen.getByRole('textbox');
+    await user.click(input);
+    await user.keyboard('{Escape}');
+
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('should ignore non-numeric input in custom slippage field', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SettingsModal isOpen onClose={vi.fn()} />);
+
+    const input = screen.getByRole('textbox');
+    await user.type(input, 'abc');
+
+    expect(input).toHaveValue('');
+  });
+
+  it('should close tooltip when the overlay backdrop is clicked', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SettingsModal isOpen onClose={vi.fn()} />);
+
+    await user.click(screen.getByRole('button', { name: 'Explain slippage tolerance' }));
+    expect(
+      screen.getByText(/Your transaction will revert if the price changes/i)
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Close slippage explanation' }));
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Your transaction will revert if the price changes/i)
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it('should show frontrun warning when slippage exceeds 5%', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<SettingsModal isOpen onClose={vi.fn()} />);
+
+    await user.type(screen.getByRole('textbox'), '6');
+
+    expect(screen.getByText(/Your transaction may be frontrun/i)).toBeInTheDocument();
+  });
+
+  it('should not render anything when isOpen is false', () => {
+    const { container } = renderWithProviders(
+      <SettingsModal isOpen={false} onClose={vi.fn()} />
+    );
+
+    expect(container.innerHTML).toBe('');
+  });
 });
