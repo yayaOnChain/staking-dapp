@@ -101,4 +101,83 @@ describe('TransactionHistoryModal', () => {
     await user.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalledTimes(2);
   });
+
+  it('should not call onClose when Escape is pressed and modal is closed', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<TransactionHistoryModal isOpen={false} onClose={onClose} />);
+
+    await user.keyboard('{Escape}');
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('should close when close button is clicked', async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(<TransactionHistoryModal isOpen onClose={onClose} />);
+
+    await user.click(screen.getByRole('button', { name: /✕/ }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('should render failed transaction status', () => {
+    mockUseTransactions.mockReturnValue({
+      transactions: [
+        {
+          hash: '0xfail123',
+          type: 'Swap',
+          description: 'Failed swap',
+          status: 'failed',
+          timestamp: Date.now(),
+        },
+      ],
+      clearHistory: vi.fn(),
+      addTransaction: vi.fn(),
+      updateTransactionStatus: vi.fn(),
+    });
+
+    render(<TransactionHistoryModal isOpen onClose={vi.fn()} />);
+
+    expect(screen.getByText('Failed')).toBeInTheDocument();
+  });
+
+  it('should render pending transaction status with pulse class', () => {
+    mockUseTransactions.mockReturnValue({
+      transactions: [
+        {
+          hash: '0xpend123',
+          type: 'Swap',
+          description: 'Pending swap',
+          status: 'pending',
+          timestamp: Date.now(),
+        },
+      ],
+      clearHistory: vi.fn(),
+      addTransaction: vi.fn(),
+      updateTransactionStatus: vi.fn(),
+    });
+
+    render(<TransactionHistoryModal isOpen onClose={vi.fn()} />);
+
+    const badge = screen.getByText('Pending');
+    expect(badge).toBeInTheDocument();
+    expect(badge.className).toContain('animate-pulse');
+  });
+
+  it('should release body scroll when closing the modal', () => {
+    const { rerender } = render(<TransactionHistoryModal isOpen onClose={vi.fn()} />);
+    expect(document.body.style.overflow).toBe('hidden');
+
+    rerender(<TransactionHistoryModal isOpen={false} onClose={vi.fn()} />);
+    expect(document.body.style.overflow).toBe('unset');
+  });
+
+  it('should restore body scroll on cleanup', () => {
+    const onClose = vi.fn();
+    const { unmount } = render(<TransactionHistoryModal isOpen onClose={onClose} />);
+    expect(document.body.style.overflow).toBe('hidden');
+
+    unmount();
+    expect(document.body.style.overflow).toBe('unset');
+  });
 });
