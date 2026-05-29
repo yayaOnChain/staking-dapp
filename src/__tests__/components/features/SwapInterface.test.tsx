@@ -198,4 +198,130 @@ describe('SwapInterface', () => {
     render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
     expect(screen.getByText('Insufficient Liquidity')).toBeInTheDocument();
   });
+
+  it('should open settings modal and close it', async () => {
+    const user = userEvent.setup();
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    await user.click(screen.getByTitle('Transaction Settings'));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    await user.click(screen.getByLabelText('Close settings'));
+  });
+
+  it('should call setAmountIn when typing in the from input', async () => {
+    const user = userEvent.setup();
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    const inputs = screen.getAllByPlaceholderText('0.0');
+    await user.type(inputs[0], '5');
+    expect(setAmountInMock).toHaveBeenCalled();
+  });
+
+  it('should show confirming state when transaction is confirming', () => {
+    mockUseSwap.mockReturnValue({
+      ...createSwapState(),
+      amountIn: '1',
+      estimatedOutput: '0.8',
+      isApproved: true,
+      isConfirming: true,
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('Confirming...')).toBeInTheDocument();
+  });
+
+  it('should disable approve button when isApproving', () => {
+    mockUseSwap.mockReturnValue({
+      ...createSwapState(),
+      amountIn: '1',
+      isApproving: true,
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('Approve Token')).toBeDisabled();
+  });
+
+  it('should disable swap button when amountIn is empty', () => {
+    mockUseSwap.mockReturnValue({
+      ...createSwapState(),
+      isApproved: true,
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('Swap')).toBeDisabled();
+  });
+
+  it('should handle approve error gracefully', async () => {
+    const user = userEvent.setup();
+    approveMock.mockRejectedValue(new Error('approve failed'));
+    mockUseSwap.mockReturnValue({
+      ...createSwapState(),
+      amountIn: '1',
+      approve: approveMock,
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    await expect(
+      user.click(screen.getByText('Approve Token')),
+    ).resolves.toBeUndefined();
+  });
+
+  it('should handle swap error gracefully', async () => {
+    const user = userEvent.setup();
+    swapMock.mockRejectedValue(new Error('swap failed'));
+    mockUseSwap.mockReturnValue({
+      ...createSwapState(),
+      amountIn: '1',
+      estimatedOutput: '0.8',
+      isApproved: true,
+      swap: swapMock,
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    await expect(
+      user.click(screen.getByText('Swap')),
+    ).resolves.toBeUndefined();
+  });
+
+  it('should display TOKEN1 when tokenIn is token1', () => {
+    mockUseSwap.mockReturnValue({
+      ...createSwapState(),
+      tokenIn: 'token1',
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('TOKEN1')).toBeInTheDocument();
+    expect(screen.getByText('TOKEN0')).toBeInTheDocument();
+  });
+
+  it('should toggle from token1 to token0', async () => {
+    const user = userEvent.setup();
+    mockUseSwap.mockReturnValue({
+      ...createSwapState(),
+      tokenIn: 'token1',
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    await user.click(screen.getByRole('button', { name: 'TOKEN1' }));
+    expect(setTokenInMock).toHaveBeenCalledWith('token0');
+  });
+
+  it('should render balance display with zero balance', () => {
+    mockUseSwap.mockReturnValue({
+      ...createSwapState(),
+      balance: BigInt(0),
+    });
+
+    render(<SwapInterface {...defaultProps} />, { wrapper: createWrapper() });
+
+    expect(screen.getByText(/Balance:/)).toBeInTheDocument();
+  });
 });
