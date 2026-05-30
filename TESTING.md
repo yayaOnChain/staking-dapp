@@ -2,52 +2,56 @@
 
 ## Overview
 
-This project has a comprehensive frontend test suite with **28 Vitest files** and **305 tests** covering unit tests, integration tests, hooks, providers, and component behavior for the Staking DApp application.
+This project has a comprehensive frontend test suite with **29 Vitest files** and **451 tests** covering unit tests, integration tests, hooks, providers, and component behavior for the Staking DApp application. An additional **2 contract test files** (53 tests) exist under `src/__tests__/contracts/` but are excluded from the Vitest run.
 
-**Current Status:** ✅ All 305 frontend tests passing
+**Current Status:** ✅ All 451 tests passing
 
 ## Test Structure
 
 ```
-src/__tests__/
-├── App.test.tsx                  # App shell and tab navigation
+src/__tests__/ (29 test files run — 2 contract files excluded via vitest config)
+├── App.test.tsx                  # App shell and tab navigation (2 tests)
 ├── abis/
 │   └── index.test.ts              # ABI structure validation (34 tests)
 ├── components/
 │   ├── features/
-│   │   ├── LiquidityProvider.test.tsx   # Liquidity feature states and flows
-│   │   ├── SwapInterface.test.tsx       # Swap feature states and flows
-│   │   └── YieldFarmDashboard.test.tsx  # Yield farm feature states and flows
+│   │   ├── LiquidityProvider.test.tsx   # Liquidity feature states and flows (34 tests)
+│   │   ├── SwapInterface.test.tsx       # Swap feature states and flows (20 tests)
+│   │   └── YieldFarmDashboard.test.tsx  # Yield farm feature states and flows (13 tests)
 │   ├── layout/
-│   │   ├── Footer.test.tsx              # Footer content and contract references
-│   │   └── Navbar.test.tsx              # Navbar wallet/network states
+│   │   ├── Footer.test.tsx              # Footer content and contract references (4 tests)
+│   │   └── Navbar.test.tsx              # Navbar wallet/network states (4 tests)
 │   ├── ui/
-│   │   ├── Button.test.tsx              # Button component
-│   │   ├── Card.test.tsx                # Card components
-│   │   ├── ErrorBoundary.test.tsx       # Error fallback handling
-│   │   ├── Input.test.tsx               # Input component
-│   │   ├── SettingsModal.test.tsx       # Slippage settings modal
-│   │   ├── StatBox.test.tsx             # StatBox component
-│   │   ├── TokenSelect.test.tsx         # Token selector button
-│   │   └── TransactionHistoryModal.test.tsx # Transaction drawer behavior
+│   │   ├── Button.test.tsx              # Button component (23 tests)
+│   │   ├── Card.test.tsx                # Card components (18 tests)
+│   │   ├── ErrorBoundary.test.tsx       # Error fallback handling (5 tests)
+│   │   ├── Input.test.tsx               # Input component (23 tests)
+│   │   ├── SettingsModal.test.tsx       # Slippage settings modal (12 tests)
+│   │   ├── StatBox.test.tsx             # StatBox component (26 tests)
+│   │   ├── TokenSelect.test.tsx         # Token selector button (27 tests)
+│   │   └── TransactionHistoryModal.test.tsx # Transaction drawer behavior (10 tests)
 │   └── web3/
-│       └── TransactionToast.test.tsx    # Transaction receipt feedback
+│       └── TransactionToast.test.tsx    # Transaction receipt feedback (4 tests)
 ├── config/
-│   ├── constants.test.ts          # Network & contract config (24 tests)
-│   └── contracts.test.ts          # Contract exports (6 tests)
-│   └── wagmi.test.ts              # Wagmi config wiring
+│   ├── constants.test.ts          # Network & contract config (40 tests)
+│   ├── contracts.test.ts          # Contract exports (6 tests)
+│   └── wagmi.test.ts              # Wagmi config wiring (2 tests)
+├── contracts/ (excluded from vitest run)
+│   ├── LiquidityPool.test.ts      # Liquidity pool contract tests (25 tests)
+│   └── YieldFarm.test.ts          # Yield farm contract tests (28 tests)
 ├── lib/
 │   └── utils.test.ts              # Utility functions (12 tests)
 ├── hooks/
-│   ├── useApproval.test.tsx       # Token approval hook (7 tests)
-│   ├── useNetworkConfig.test.tsx  # Network resolution hook
-│   ├── useSettings.test.tsx       # Slippage settings hook
-│   ├── useSwap.test.tsx           # Swap functionality hook (9 tests)
-│   ├── useTransactions.test.tsx   # Transaction state hook/provider integration
-│   ├── useLiquidity.test.tsx      # Liquidity management hook (11 tests)
-│   └── useYieldFarm.test.tsx      # Yield farming hook (9 tests)
+│   ├── useApproval.test.tsx       # Token approval hook (13 tests)
+│   ├── useLiquidity.test.tsx      # Liquidity management hook (37 tests)
+│   ├── useNetworkConfig.test.tsx  # Network resolution hook (5 tests)
+│   ├── useSettings.test.tsx       # Slippage settings hook (8 tests)
+│   ├── useSwap.test.tsx           # Swap functionality hook (23 tests)
+│   ├── useTransactions.test.tsx   # Transaction state hook/provider integration (12 tests)
+│   └── useYieldFarm.test.tsx      # Yield farming hook (27 tests)
 └── providers/
-    └── AppProviders.test.tsx      # Root provider composition
+    ├── AppProviders.test.tsx      # Root provider composition (6 tests)
+    └── TransactionProvider.test.tsx # Transaction provider standalone (1 test)
 ```
 
 ## Test Summary
@@ -55,14 +59,15 @@ src/__tests__/
 | Category | Files | Tests | Coverage |
 |----------|-------|-------|----------|
 | **ABIs** | 1 | 34 | ABI structure validation |
-| **Config** | 3 | 33 | Network, contracts, and Wagmi configuration |
+| **Config** | 3 | 48 | Network, contracts, and Wagmi configuration |
 | **Lib/Utils** | 1 | 12 | Utility functions |
-| **Hooks** | 7 | 56 | Custom React hooks and transaction state |
-| **UI Components** | 8 | 125 | Reusable UI components and modal/error states |
-| **Layout/Web3** | 3 | 9 | Navbar, footer, and transaction notifications |
-| **Feature Components** | 3 | 32 | Feature interfaces and UI states |
-| **Providers/App** | 2 | 4 | App shell and provider composition |
-| **TOTAL** | **28** | **305** | ✅ All passing |
+| **Hooks** | 7 | 125 | Custom React hooks and transaction state |
+| **UI Components** | 8 | 144 | Reusable UI components and modal/error states |
+| **Layout/Web3** | 3 | 12 | Navbar, footer, and transaction notifications |
+| **Feature Components** | 3 | 67 | Feature interfaces and UI states |
+| **Providers/App** | 3 | 9 | App shell and provider composition |
+| **Contracts** (excluded) | 2 | 53 | Contract integration tests |
+| **TOTAL** (vitest) | **29** | **451** | ✅ All passing |
 
 ## Running Tests
 
@@ -147,20 +152,24 @@ Test feature components with mocked hooks.
 
 The following external dependencies are mocked in `src/tests/setup-tests.tsx`:
 
-- **wagmi** - All hooks mocked to return predictable values
-- **viem** - `parseEther`, `formatEther` mocked
-- **@rainbow-me/rainbowkit** - ConnectButton mocked
-- **sonner** - Toast notifications mocked
-- **@tanstack/react-query** - QueryClient mocked
+- **viem** - `parseEther`, `formatEther`, `parseUnits`, `formatUnits`, `zeroAddress`
+- **wagmi** - `useAccount`, `useReadContract`, `useWriteContract`, `useWaitForTransactionReceipt`, `useBalance`, `useConnect`, `useDisconnect`, `useChainId`, `useBlockNumber`
+- **@rainbow-me/rainbowkit** - `ConnectButton` rendered as `<button>Connect Wallet</button>`
+- **sonner** - `Toaster` component and `toast.{success,error,loading,dismiss,promise}`
+- **@tanstack/react-query** - `useQueryClient` with `invalidateQueries`, `setQueryData`, `getQueryData`, `refetchQueries`
 
 ### Custom Mocks
 
-Located in `src/tests/setup-tests.tsx` and `test-providers.tsx`:
-- Wallet connection state
-- Contract read/write operations
-- Transaction receipts
-- Toast notifications
-- **GLOBAL STATE**: Mocked `SettingsProvider` and `TransactionProvider` wrap all React testing environments to prevent isolated hook Context failures.
+Located in `src/tests/setup-tests.tsx`:
+- **AppProviders** - Renders `<div data-testid="app-providers">`
+- **ErrorBoundary** - Renders `<div data-testid="error-boundary">`
+- **Navbar** - Renders `<nav data-testid="navbar">`
+- **Footer** - Renders `<footer data-testid="footer">`
+
+### Test Provider Wrappers
+
+Located in `src/tests/test-providers.tsx`:
+- **TestProviders** - Wraps all tests in `QueryClientProvider` > `SettingsProvider` > `TransactionProvider` to prevent isolated hook Context failures.
 
 ## Test Utilities
 
@@ -170,16 +179,63 @@ Located in `src/tests/test-utils.tsx`:
 ```typescript
 import { renderWithProviders, TestProviders } from '../../tests/test-utils';
 
-// Render with QueryClientProvider
+// Render with full provider stack (QueryClient + Settings + Transaction)
 renderWithProviders(<MyComponent />);
 ```
 
-### Mock Data
+### Mock Addresses
 ```typescript
-import { mockAddresses } from '../../tests/test-utils';
+import { mockAddresses, createMockAddress } from '../../tests/test-utils';
 
 // Use predefined test addresses
-const { pool, farm, tokenA, tokenB } = mockAddresses;
+const { pool, farm, tokenA, tokenB, rewardToken, user, zero } = mockAddresses;
+
+// Generate custom addresses
+const customAddress = createMockAddress('0xCustom');
+```
+
+### Mock Data Factories
+```typescript
+import { createMockTokenData, createMockPoolData, createMockFarmData } from '../../tests/test-utils';
+
+const tokenData = createMockTokenData({ symbol: 'ETH', balance: BigInt(10 * 1e18) });
+const poolData = createMockPoolData({ reserve0: BigInt(500 * 1e18) });
+const farmData = createMockFarmData({ totalStaked: BigInt(1000 * 1e18) });
+```
+
+### Event Helpers
+```typescript
+import { fireEvent, waitForAsync } from '../../tests/test-utils';
+
+// Simulate input change
+fireEvent.change(inputElement, '100');
+
+// Simulate click
+fireEvent.click(buttonElement);
+
+// Wait for async operations
+await waitForAsync(200);
+```
+
+### Mock Hook Return Helper
+```typescript
+import { createMockHookReturn } from '../../tests/test-utils';
+
+interface MyHookReturn { value: string; count: number; }
+const mockHook = createMockHookReturn<MyHookReturn>({ value: 'test', count: 0 });
+mockHook.mockUpdate({ count: 5 }); // update specific fields
+mockHook.mockReset(); // reset to initial values
+```
+
+### Console Mock Helper
+```typescript
+import { mockConsole } from '../../tests/test-utils';
+
+mockConsole.setup();  // spy on console.error/warn/log
+// ... run test code ...
+expect(mockConsole.error).toHaveBeenCalledWith(expectedError);
+mockConsole.clear();   // clear all calls
+mockConsole.restore();  // restore original console
 ```
 
 ## Writing New Tests
@@ -251,11 +307,14 @@ describe('MyComponent', () => {
 - ✅ Transaction states
 
 ### UI Components
-- ✅ All button variants and states (27 tests)
-- ✅ Card layouts and padding (14 tests)
+- ✅ All button variants and states (23 tests)
+- ✅ Card layouts and padding (18 tests)
 - ✅ Input validation and errors (23 tests)
-- ✅ Stat box variants (14 tests)
-- ✅ Token selection buttons (28 tests)
+- ✅ Stat box variants (26 tests)
+- ✅ Token selection buttons (27 tests)
+- ✅ Settings modal (12 tests)
+- ✅ Error boundary fallback states (5 tests)
+- ✅ Transaction history modal (10 tests)
 
 ## Configuration
 
@@ -263,6 +322,7 @@ describe('MyComponent', () => {
 ```typescript
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
@@ -271,9 +331,24 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/tests/setup-tests.tsx'],
     include: ['src/**/*.{test,spec}.{ts,tsx}', 'src/__tests__/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['node_modules', 'dist', '.git', '.vscode', 'src/__tests__/contracts/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/tests/**',
+        'src/scripts/**',
+        'src/**/*.d.ts',
+        'src/types/index.ts',
+        'src/hooks/index.ts',
+        'src/components/ui/index.ts',
+        'src/config/contracts.ts',
+        'src/**/*.config.*',
+        'src/main.tsx',
+        'src/vite-env.d.ts',
+        'src/__tests__/contracts/**',
+      ],
       thresholds: {
         global: {
           branches: 70,
@@ -282,6 +357,19 @@ export default defineConfig({
           statements: 70,
         },
       },
+    },
+    environmentOptions: {
+      jsdom: {
+        url: 'http://localhost:3000',
+      },
+    },
+    mockReset: true,
+    clearMocks: true,
+    restoreMocks: true,
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
     },
   },
 });
