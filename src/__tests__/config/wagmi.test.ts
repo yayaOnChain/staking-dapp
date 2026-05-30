@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const getDefaultConfigMock = vi.fn((options: unknown) => ({
   kind: 'wagmi-config',
@@ -29,8 +29,13 @@ vi.mock('@/config/constants', () => ({
 }));
 
 describe('wagmi config', () => {
-  it('should create wagmi config with supported chains and transports', async () => {
-    const { config } = await import('@/config/wagmi');
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should include hardhat chain in development mode', async () => {
+    const { createWagmiConfig } = await import('@/config/wagmi');
+    const config = createWagmiConfig(true);
 
     expect(getDefaultConfigMock).toHaveBeenCalledWith({
       appName: 'Staking DApp',
@@ -46,6 +51,29 @@ describe('wagmi config', () => {
     });
 
     expect(httpMock).toHaveBeenCalledWith('http://127.0.0.1:8545');
+    expect(httpMock).toHaveBeenCalledWith('https://rpc.sepolia.org');
+    expect(config).toEqual({
+      kind: 'wagmi-config',
+      options: expect.any(Object),
+    });
+  });
+
+  it('should exclude hardhat chain in production mode', async () => {
+    const { createWagmiConfig } = await import('@/config/wagmi');
+    const config = createWagmiConfig(false);
+
+    expect(getDefaultConfigMock).toHaveBeenCalledWith({
+      appName: 'Staking DApp',
+      projectId: 'wallet-connect-project-id',
+      chains: [
+        { id: 11155111, name: 'Sepolia' },
+      ],
+      transports: {
+        11155111: { transportUrl: 'https://rpc.sepolia.org' },
+      },
+    });
+
+    expect(httpMock).not.toHaveBeenCalledWith('http://127.0.0.1:8545');
     expect(httpMock).toHaveBeenCalledWith('https://rpc.sepolia.org');
     expect(config).toEqual({
       kind: 'wagmi-config',
