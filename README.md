@@ -66,8 +66,11 @@ src/
 │   ├── features/           # Feature components (Swap, Liquidity, Farm)
 │   ├── layout/             # Layout components (Navbar, Footer)
 │   ├── ui/                 # Reusable UI components
-│   └── web3/               # Web3-specific components
+│   └── web3/               # Web3-specific components (TransactionToast)
 ├── config/                 # Network & contract configuration
+│   ├── constants.ts        # Network & contract constants
+│   ├── contracts.ts        # Contract address exports
+│   └── wagmi.ts            # Wagmi client configuration
 ├── contracts/              # Smart contract implementations
 │   ├── LiquidityPool.sol   # AMM liquidity pool with swap functionality
 │   ├── YieldFarm.sol       # Reward distribution farming contract
@@ -76,14 +79,25 @@ src/
 │       ├── TokenB.sol      # Second ERC20 token
 │       └── RewardToken.sol # Reward token for farming
 ├── hooks/                  # Custom React hooks
-│   ├── useSwap.ts          # Swap logic
+│   ├── useApproval.ts      # Token approval
 │   ├── useLiquidity.ts     # Liquidity management
-│   ├── useYieldFarm.ts     # Staking/harvesting
-│   └── useApproval.ts      # Token approval
-├── providers/              # App providers (Web3, Query)
+│   ├── useNetworkConfig.ts # Network resolution
+│   ├── useSettings.ts      # Slippage settings
+│   ├── useSwap.ts          # Swap logic
+│   ├── useTransactions.ts  # Transaction state management
+│   └── useYieldFarm.ts     # Staking/harvesting
+├── lib/
+│   └── utils.ts            # Utility functions (cn, etc.)
+├── providers/              # React context providers
+│   ├── AppProviders.tsx     # Root provider composition
+│   ├── SettingsProvider.tsx # Slippage settings state
+│   └── TransactionProvider.tsx # Transaction state management
+├── scripts/                # Deployment scripts
+│   ├── deploy.ts           # Contract deployment
+│   └── fund-farm.ts        # Farm funding script
 ├── tests/                  # Test utilities and mocks
-├── types/                  # TypeScript type definitions
-└── lib/                    # Utility functions
+└── types/
+    └── index.ts            # TypeScript type definitions
 ```
 
 ---
@@ -112,8 +126,12 @@ npm install
 Create a `.env` file in the root directory:
 
 ```env
-# Sepolia RPC
+# Required: WalletConnect Project ID (get from https://cloud.walletconnect.com)
+VITE_WALLET_CONNECT_PROJECT_ID=your_project_id
+
+# RPC URLs (optional — fallbacks are built-in)
 VITE_SEPOLIA_RPC_URL=https://rpc.sepolia.org
+VITE_MAINNET_RPC_URL=https://rpc.ankr.com/eth
 
 # Contract Addresses (Sepolia)
 VITE_POOL_ADDRESS=0x...
@@ -140,7 +158,7 @@ npm run preview
 
 ## 🧪 Testing
 
-This project has a comprehensive test suite with **235 tests** covering all features.
+This project has a comprehensive test suite with **451 frontend tests** (29 Vitest files) and **53 contract tests** (2 Hardhat files), covering all features.
 
 ```bash
 # Run tests in watch mode
@@ -161,12 +179,15 @@ npm run test:coverage
 | Category | Files | Tests | Status |
 |----------|-------|-------|--------|
 | ABIs | 1 | 34 | ✅ |
-| Config | 2 | 30 | ✅ |
-| Utils | 1 | 12 | ✅ |
-| Hooks | 4 | 46 | ✅ |
-| UI Components | 5 | 96 | ✅ |
-| Feature Components | 3 | 17 | ✅ |
-| **Total** | **16** | **235** | ✅ |
+| Config | 3 | 48 | ✅ |
+| Lib/Utils | 1 | 12 | ✅ |
+| Hooks | 7 | 125 | ✅ |
+| UI Components | 8 | 144 | ✅ |
+| Layout/Web3 | 3 | 12 | ✅ |
+| Feature Components | 3 | 67 | ✅ |
+| Providers/App | 3 | 9 | ✅ |
+| **Frontend Total** | **29** | **451** | ✅ |
+| Contracts (excluded) | 2 | 53 | ⏭️ Hardhat |
 
 ---
 
@@ -213,11 +234,20 @@ Click "Connect Wallet" in the top-right corner and select your Web3 wallet.
 | `npm run dev` | Start development server |
 | `npm run build` | Build for production |
 | `npm run preview` | Preview production build |
-| `npm run test` | Run tests in watch mode |
-| `npm run test:run` | Run tests once |
-| `npm run test:ui` | Run tests with UI |
-| `npm run test:coverage` | Run tests with coverage |
 | `npm run lint` | Run ESLint |
+| `npm run type-check` | Run TypeScript type checking |
+| `npm run test` | Run all tests (contract + frontend) |
+| `npm run test:run` | Run frontend tests once (CI) |
+| `npm run test:ui` | Run frontend tests with UI |
+| `npm run test:coverage` | Run frontend tests with coverage |
+| `npm run test:contract` | Run Hardhat contract tests |
+| `npm run compile` | Compile Solidity contracts |
+| `npm run clean` | Clean Hardhat artifacts |
+| `npm run deploy:local` | Deploy contracts to local Hardhat |
+| `npm run deploy:sepolia` | Deploy contracts to Sepolia |
+| `npm run fund:local` | Fund farm on local network |
+| `npm run fund:sepolia` | Fund farm on Sepolia |
+| `npm run predeploy` | Build + lint + type-check before deploy |
 
 ---
 
@@ -225,7 +255,8 @@ Click "Connect Wallet" in the top-right corner and select your Web3 wallet.
 
 | Network | Chain ID | Status |
 |---------|----------|--------|
-| Sepolia | 11155111 | ✅ Active |
+| Hardhat Local | 31337 | ✅ Active (development) |
+| Sepolia | 11155111 | ✅ Active (testnet) |
 | Ethereum Mainnet | 1 | ✅ Active (*Dynamically connects via Wagmi*) |
 
 ---
@@ -247,9 +278,12 @@ The DApp interacts with the following smart contracts:
 ### Built-in Components
 - **Button** - Multiple variants (primary, secondary, outline) with loading states
 - **Card** - Responsive card layouts with padding variants
+- **ErrorBoundary** - Error fallback UI with retry
 - **Input** - Numeric input with validation and error states
+- **SettingsModal** - Slippage tolerance configuration modal
 - **StatBox** - Display statistics with different visual styles
 - **TokenSelect** - Token selection dropdown with balance display
+- **TransactionHistoryModal** - Transaction history drawer with explorer links
 
 ### Design System
 - Dark theme optimized for DeFi applications
