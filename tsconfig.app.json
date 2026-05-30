@@ -32,5 +32,6 @@
       "typechain-types": ["./typechain-types"]
     },
   },
-  "include": ["src", "typechain-types", "hardhat.config.ts"]
+  "include": ["src", "typechain-types", "hardhat.config.ts"],
+  "exclude": ["node_modules", "src/__tests__", "src/contracts", "src/scripts", "src/tests"]
 }
