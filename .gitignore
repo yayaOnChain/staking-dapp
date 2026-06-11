@@ -35,6 +35,10 @@ artifacts
 typechain-types
 cache
 
+# Foundry
+out
+broadcast
+
 # TypeScript declaration files (except vite-env.d.ts)
 *.d.ts
 !src/vite-env.d.ts
