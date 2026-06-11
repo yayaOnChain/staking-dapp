@@ -52,7 +52,8 @@ A modern, feature-rich **Decentralized Finance (DeFi)** application built on Eth
 | **Wallet** | Rainbow Kit 2.2 |
 | **State** | TanStack Query 5.90 |
 | **Notifications** | Sonner 2.0 |
-| **Testing** | Vitest 4.1, Testing Library |
+| **Contract Framework** | Hardhat + Foundry (hybrid) |
+| **Testing** | Vitest 4.1, Testing Library, Foundry |
 
 ---
 
@@ -95,7 +96,14 @@ src/
 ├── scripts/                # Deployment scripts
 │   ├── deploy.ts           # Contract deployment
 │   └── fund-farm.ts        # Farm funding script
+├── test/                   # Foundry Solidity tests
+│   ├── YieldFarm.t.sol     # YieldFarm contract tests
+│   └── LiquidityPool.t.sol # LiquidityPool contract tests
 ├── tests/                  # Test utilities and mocks
+├── foundry.toml            # Foundry configuration
+├── remappings.txt          # Solidity import remappings
+├── lib/                    # Foundry git submodules (forge-std, OpenZeppelin)
+├── out/                    # Foundry build artifacts
 └── types/
     └── index.ts            # TypeScript type definitions
 ```
@@ -117,8 +125,11 @@ src/
 git clone https://github.com/yourusername/staking-dapp.git
 cd staking-dapp
 
-# Install dependencies
+# Install Node.js dependencies
 npm install
+
+# Install Foundry dependencies (git submodules)
+forge install
 ```
 
 ### Environment Setup
@@ -158,21 +169,27 @@ npm run preview
 
 ## 🧪 Testing
 
-This project has a comprehensive test suite with **451 frontend tests** (29 Vitest files) and **53 contract tests** (2 Hardhat files), covering all features.
+This project has a comprehensive test suite with **451 frontend tests** (29 Vitest files) and **53 contract tests** — running on two frameworks in hybrid mode.
+
+### Frontend Tests (Vitest)
 
 ```bash
-# Run tests in watch mode
-npm run test
-
-# Run tests once (CI mode)
-npm run test:run
-
-# Run tests with UI
-npm run test:ui
-
-# Run tests with coverage report
-npm run test:coverage
+npm run test:frontend     # Run all frontend tests
+npm run test:run          # Run once (CI mode)
+npm run test:ui           # Run with UI
+npm run test:coverage     # Run with coverage report
 ```
+
+### Contract Tests (Hardhat + Foundry Hybrid)
+
+```bash
+npm run test:contract          # Hardhat (53 tests, ~8s)
+npm run test:contract:forge    # Foundry (53 tests, ~1s)
+npm run test:contract:forge:gas   # Foundry with gas report
+npm run test                   # All tests (contract + frontend)
+```
+
+> **Hybrid Approach:** Foundry (`forge test`) for fast iteration during development, Hardhat (`npx hardhat test`) for deployment scripts, TypeChain types, and production CI.
 
 ### Test Coverage
 
@@ -187,7 +204,8 @@ npm run test:coverage
 | Feature Components | 3 | 67 | ✅ |
 | Providers/App | 3 | 9 | ✅ |
 | **Frontend Total** | **29** | **451** | ✅ |
-| Contracts (excluded) | 2 | 53 | ⏭️ Hardhat |
+| Contracts (Hardhat) | 2 | 53 | ✅ TypeScript |
+| Contracts (Foundry) | 2 | 53 | ⚡ Solidity |
 
 ---
 
@@ -240,8 +258,12 @@ Click "Connect Wallet" in the top-right corner and select your Web3 wallet.
 | `npm run test:run` | Run frontend tests once (CI) |
 | `npm run test:ui` | Run frontend tests with UI |
 | `npm run test:coverage` | Run frontend tests with coverage |
-| `npm run test:contract` | Run Hardhat contract tests |
-| `npm run compile` | Compile Solidity contracts |
+| `npm run test:contract` | Run Hardhat contract tests (TypeScript) |
+| `npm run test:contract:forge` | Run Foundry contract tests (Solidity, ~1s) |
+| `npm run test:contract:forge:gas` | Run Foundry tests with gas report |
+| `npm run test:contract:forge:watch` | Run Foundry tests in watch mode |
+| `npm run compile` | Compile with Hardhat |
+| `npm run compile:forge` | Compile with Foundry (`forge build`) |
 | `npm run clean` | Clean Hardhat artifacts |
 | `npm run deploy:local` | Deploy contracts to local Hardhat |
 | `npm run deploy:sepolia` | Deploy contracts to Sepolia |
